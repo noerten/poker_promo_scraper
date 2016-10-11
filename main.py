@@ -2,6 +2,9 @@ import urllib.request
 from bs4 import BeautifulSoup
 
 betsafe_promos_url = 'https://www.betsafe.com/en/specialoffers/'
+triobet_promos_url = 'https://www.triobet.com/en/promotions/'
+
+promos_urls=[betsafe_promos_url, triobet_promos_url]
 
 def get_html(url):
     response = urllib.request.urlopen(url)
@@ -10,8 +13,8 @@ def get_html(url):
 def parse(html):
     soup = BeautifulSoup(html, "html.parser")
     grid = soup.find(id='ArticleGrid')
-    betsafe_promos = []
     
+    betsafe_promos = []
     for item in grid.find_all(id='PromotionItem'):
         promo_type_tag = item['class'][1]
         betsafe_promos.append({
@@ -26,7 +29,8 @@ def parse(html):
         
     
 def main():
-    print(parse(get_html(betsafe_promos_url)))
+    for url in promos_urls:
+        print(parse(get_html(url)))
 
 if __name__ == '__main__':
     main()
