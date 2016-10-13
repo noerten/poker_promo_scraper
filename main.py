@@ -13,7 +13,7 @@ def get_html(url):
     webpage = urllib.request.urlopen(req).read()                             
     return webpage
 
-def scrape_betsafe(html):
+def scrape_betsafe(html, rooms):
     soup = BeautifulSoup(html, "html.parser")
     grid = soup.find(id='ArticleGrid')
     betsafe_promos = []
@@ -25,29 +25,30 @@ def scrape_betsafe(html):
         promo_link = item.a.get('href')
         promo_image_link = item.find(id='PromotionImage').get('src')
         promo_added = datetime.datetime.now()
-        promo_room = 'betsafe'
-        one_promo = (promo_title, promo_desc, promo_type, promo_link,
-                     promo_image_link, promo_added, promo_room)
+        promo_room = rooms['betsafe']
+        one_promo = [promo_title, promo_desc, promo_type, promo_link,
+                     promo_image_link, promo_added, promo_room]
         betsafe_promos.append(one_promo)
         print(one_promo)
     return betsafe_promos
 
-def scrape_triobet(html):
+def scrape_triobet(html, rooms):
     soup = BeautifulSoup(html, "html.parser")
     section = soup.find('li', class_='promotion-list')
     triobet_promos = []
     for item in section.find_all('li', class_='promotion-container'):
         if item['class'][1] == 'odds': promo_type = 'sports'
         else: promo_type = item['class'][1]
-        triobet_promos.append({
-            'type' : promo_type,
-            'title' : item.find('h2').string,
-            'desc' : item.find('p').string,
-            'link' : 'https://www.triobet.com'+item.a.get('href'),
-            'image_link' : item.img.get('data-src'),
-            'added' : datetime.datetime.now(),
-            'room' : 'triobet'
-            })
+        promo_title = item.find('h2').string,
+        promo_desc = item.find('p').string,
+        promo_link = 'https://www.triobet.com'+item.a.get('href'),
+        promo_image_link = item.img.get('data-src'),
+        promo_added = datetime.datetime.now(),
+        promo_room = rooms['triobet']
+        one_promo = [promo_title, promo_desc, promo_type, promo_link,
+                     promo_image_link, promo_added, promo_room]
+        triobet_promos.append(one_promo)
+        print(one_promo)
     return triobet_promos
 
 def scrape_guts(html):
@@ -67,24 +68,49 @@ def scrape_guts(html):
     return guts_promos
 
 promos_urls = {betsafe_promos_url: scrape_betsafe,
-               #triobet_promos_url: scrape_triobet,
+               triobet_promos_url: scrape_triobet,
                #guts_promos_url: scrape_guts,
                }
 
-def work_with_db():
-    conn = sqlite3.connect('stat.sqlite3')
-    cur=conn.cursor()
-    cur.execute('CREATE TABLE IF NOT EXISTS promos\
-                (id INTEGER, added TEXT, type TEXT, title TEXT, desc TEXT,\
-                link TEXT, image_link TEXT, room_id INTEGER)')
-    cur.execute('CREATE TABLE IF NOT EXISTS rooms\
-                (id INTEGER PRIMARY KEY, room TEXT)')
+def create_tables():
+    conn = sqlite3.connect('pps.sqlite3')
+    with conn:
+        cur=conn.cursor()
+        cur.execute('CREATE TABLE IF NOT EXISTS promos\
+                    (id INTEGER PRIMARY KEY, added TEXT, type TEXT, title TEXT,\
+                    desc TEXT, link TEXT, image_link TEXT, room_id INTEGER,\
+                    FOREIGN KEY(room_id) REFERENCES rooms(id))')
+        cur.execute('CREATE TABLE IF NOT EXISTS rooms\
+                    (id INTEGER PRIMARY KEY, name TEXT, UNIQUE(name))')
+        cur.execute('INSERT OR IGNORE INTO rooms(name) VALUES ("betsafe")')
+        cur.execute('INSERT OR IGNORE INTO rooms(name) VALUES ("triobet")')
 
+def get_all_rooms():
+    conn = sqlite3.connect('pps.sqlite3')
+    with conn:
+        cur=conn.cursor()
+        cur.execute("SELECT * FROM rooms")
+        rows = cur.fetchall()
+        rooms = {}
+        if rows:
+            for row in rows:
+                rooms[row[1]] = row[0]
+        return rooms
+
+def insert_promos():
+    pass
+
+
+    
 def main():
     promos = []
+    create_tables()
+    rooms = get_all_rooms()
+    print(rooms)
     for url in list(promos_urls.keys()):
-        promos.append(promos_urls[url](get_html(url)))#list of dicts w promos
-    print(promos)
+        promos.append(promos_urls[url](get_html(url), rooms))
+    
+
 
 if __name__ == '__main__':
     main()
