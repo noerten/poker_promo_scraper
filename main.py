@@ -4,11 +4,11 @@ import sys
 import urllib.request
 from bs4 import BeautifulSoup
 
-betsafe_promos_url = 'https://www.betsafe.com/en/specialoffers/'
-triobet_promos_url = 'https://www.triobet.com/en/promotions/'
+betsafe_promos_urls = ('https://www.betsafe.com/en/specialoffers/',)
+triobet_promos_urls = ('https://www.triobet.com/en/promotions/',)
 #despite 'poker' in guts' url, there are all promos
-guts_promos_url = 'https://www.guts.com/en/poker/promotions/'
-pokerstars_promos_url = 'https://www.pokerstars.com/poker/promotions/'
+guts_promos_urls = ('https://www.guts.com/en/poker/promotions/',)
+pokerstars_promos_urls = ('https://www.pokerstars.com/poker/promotions/',)
 
 def get_html(url):
     req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
@@ -90,10 +90,10 @@ def scrape_pokerstars(html, rooms):
     return pokerstars_promos
 
 promos_urls = {
-               betsafe_promos_url: scrape_betsafe,
-               triobet_promos_url: scrape_triobet,
-               guts_promos_url: scrape_guts,
-               pokerstars_promos_url: scrape_pokerstars,
+               betsafe_promos_urls: scrape_betsafe,
+               triobet_promos_urls: scrape_triobet,
+               guts_promos_urls: scrape_guts,
+               pokerstars_promos_urls: scrape_pokerstars,
                }
 
 def create_tables():
@@ -191,11 +191,13 @@ def main():
     create_tables()
     print('tables ok')
     rooms = get_rooms()
-    for url in list(promos_urls.keys()):
-        i=promos_urls[url](get_html(url), rooms)
-        scraped_promos = scraped_promos+i
-        print(str(len(i))+' promos were scraped from '+url)
-#    print(scraped_promos)
+    for urls in list(promos_urls.keys()):
+        for url in urls:
+            print(url)
+            i=promos_urls[urls](get_html(url), rooms)
+            scraped_promos = scraped_promos+i
+            print(str(len(i))+' promos were scraped from '+url)
+    sys.exit()
     print('in total '+str(len(scraped_promos))+' promos were scraped from '\
           +str(len(promos_urls))+' websites')
     base_promos = get_promos()
