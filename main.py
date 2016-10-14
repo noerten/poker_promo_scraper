@@ -8,6 +8,7 @@ betsafe_promos_url = 'https://www.betsafe.com/en/specialoffers/'
 triobet_promos_url = 'https://www.triobet.com/en/promotions/'
 #despite 'poker' in guts' url, there are all promos
 guts_promos_url = 'https://www.guts.com/en/poker/promotions/'
+pokerstars_promos_url = 'https://www.pokerstars.com/poker/promotions/'
 
 def get_html(url):
     req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
@@ -70,10 +71,29 @@ def scrape_guts(html, rooms):
         guts_promos.append(one_promo)
     return guts_promos
 
+def scrape_pokerstars(html, rooms):
+    soup = BeautifulSoup(html, "html.parser")
+    section = soup.find(id='portalWrap')
+    pokerstars_promos = []
+    for item in section.find_all('div', class_='promoPromotion'):
+        promo_type = item.a.get('href').split('/')[1]
+        promo_title = item.find('div', class_='promoThumbText')
+        promo_title.span.extract()
+        promo_title = promo_title.get_text()
+        promo_desc = None
+        promo_link = 'https://www.pokerstars.com' + item.a.get('href')
+        promo_image_link = 'https://www.pokerstars.com' + item.img.get('src')
+        promo_room = rooms['pokerstars']
+        one_promo = (promo_title, promo_desc, promo_type, promo_link,
+                     promo_image_link, promo_room)
+        pokerstars_promos.append(one_promo)
+    return pokerstars_promos
+
 promos_urls = {
                betsafe_promos_url: scrape_betsafe,
                triobet_promos_url: scrape_triobet,
                guts_promos_url: scrape_guts,
+               pokerstars_promos_url: scrape_pokerstars,
                }
 
 def create_tables():
@@ -81,6 +101,7 @@ def create_tables():
         ("betsafe",),
         ("triobet",),
         ("guts",),
+        ("pokerstars",),
         )
     conn = sqlite3.connect('pps.sqlite3')
     with conn:
@@ -140,10 +161,15 @@ def insert_promos(compared_promos):
                 if i in promos_dict:
                     inactive_ids.append(promos_dict[i])
             inactive_ids = tuple(inactive_ids)
-            cur.execute('UPDATE promos SET is_active = 0 WHERE id IN {ii}'\
-                        .format(ii=inactive_ids))
+            if len(inactive_ids) == 1:
+                cur.execute('UPDATE promos SET is_active = 0 WHERE id = {ii}'\
+                            .format(ii=inactive_ids[0]))
+            else:
+                cur.execute('UPDATE promos SET is_active = 0 WHERE id IN {ii}'\
+                            .format(ii=inactive_ids))
 #dont know why this doent work, upperr one works            
 #            cur.executemany('UPDATE promos SET is_active = 0 WHERE id IN ?', inactive_ids)
+
 def compare_promos(base_promos, scraped_promos):
     new_promos = []
     inactive_promos = []
@@ -155,6 +181,10 @@ def compare_promos(base_promos, scraped_promos):
             inactive_promos.append(i)
 #    print(inactive_promos)
     return [new_promos, inactive_promos]
+
+def print_tv(a):
+    print('type: '+str(type(a)))
+    print(a)
     
 def main():
     scraped_promos = []
