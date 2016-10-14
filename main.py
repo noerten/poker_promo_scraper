@@ -7,7 +7,7 @@ from bs4 import BeautifulSoup
 betsafe_promos_url = 'https://www.betsafe.com/en/specialoffers/'
 triobet_promos_url = 'https://www.triobet.com/en/promotions/'
 #despite 'poker' in guts' url, there are all promos
-guts_promos_url = 'https://www.guts.com/en/poker/promotions'
+guts_promos_url = 'https://www.guts.com/en/poker/promotions/'
 
 def get_html(url):
     req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
@@ -48,34 +48,40 @@ def scrape_triobet(html, rooms):
         triobet_promos.append(one_promo)
     return triobet_promos
 
-def scrape_guts(html):
+def scrape_guts(html, rooms):
     soup = BeautifulSoup(html, "html.parser")
     div = soup.find('div', class_='promotions')
     guts_promos = []
     for item in div.find_all('div', class_='card'):
-        guts_promos.append({
-            'type' : item.a.get('href').split('/')[1],
-            'title' : item.find('h2').get_text(strip=True),
-            'desc' : item.find('p'),
-            'link' : 'https://www.guts.com'+item.a.get('href'),
-            'image_link' : item.img.get('src'),
-            'added' : datetime.datetime.now(),
-            'room' : 'guts'
-            })
+        promo_type = item.a.get('href').split('/')[1]
+        promo_title = item.find('h2').get_text(strip=True)
+        promo_desc = item.find('p')
+        br_part = promo_desc.br.extract().string
+        wo_br = promo_desc.string
+        if br_part:
+            promo_desc = wo_br + "\n" + br_part
+        else:
+            promo_desc = wo_br
+        promo_link = 'https://www.guts.com'+item.a.get('href')
+        promo_image_link = item.img.get('src')
+        promo_room = rooms['guts']
+        one_promo = (promo_title, promo_desc, promo_type, promo_link,
+                     promo_image_link, promo_room)
+        guts_promos.append(one_promo)
     return guts_promos
 
 promos_urls = {
                betsafe_promos_url: scrape_betsafe,
                triobet_promos_url: scrape_triobet,
-               #guts_promos_url: scrape_guts,
+               guts_promos_url: scrape_guts,
                }
 
 def create_tables():
     rooms = (
         ("betsafe",),
         ("triobet",),
+        ("guts",),
         )
-
     conn = sqlite3.connect('pps.sqlite3')
     with conn:
         conn.execute('pragma foreign_keys=ON')
