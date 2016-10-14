@@ -4,18 +4,29 @@ import sys
 import urllib.request
 from bs4 import BeautifulSoup
 
+#MPN
 betsafe_promos_urls = ('https://www.betsafe.com/en/specialoffers/',)
 triobet_promos_urls = ('https://www.triobet.com/en/promotions/',)
 #despite 'poker' in guts' url, there are all promos
 guts_promos_urls = ('https://www.guts.com/en/poker/promotions/',)
+#pokerstars
 pokerstars_promos_urls = ('https://www.pokerstars.com/poker/promotions/',)
+#ipoker
+coral_promos_urls = ('http://www.coral.co.uk/lotto/offers/',
+                     'http://www.coral.co.uk/poker/offers/',
+                     'http://www.coral.co.uk/poker/tournaments/',
+                     'http://www.coral.co.uk/gaming/promotions/',
+                     'http://www.coral.co.uk/sports/offers/',
+#uncommented doesnt work coz renders on client?                     
+#                     'http://www.coral.co.uk/bingo/promotions/',
+                     )
 
 def get_html(url):
     req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
     webpage = urllib.request.urlopen(req).read()                             
     return webpage
 
-def scrape_betsafe(html, rooms):
+def scrape_betsafe(html, rooms, promos_url):
     soup = BeautifulSoup(html, "html.parser")
     grid = soup.find(id='ArticleGrid')
     betsafe_promos = []
@@ -32,7 +43,7 @@ def scrape_betsafe(html, rooms):
         betsafe_promos.append(one_promo)
     return betsafe_promos
 
-def scrape_triobet(html, rooms):
+def scrape_triobet(html, rooms, promos_url):
     soup = BeautifulSoup(html, "html.parser")
     section = soup.find('li', class_='promotion-list')
     triobet_promos = []
@@ -49,7 +60,7 @@ def scrape_triobet(html, rooms):
         triobet_promos.append(one_promo)
     return triobet_promos
 
-def scrape_guts(html, rooms):
+def scrape_guts(html, rooms, promos_url):
     soup = BeautifulSoup(html, "html.parser")
     div = soup.find('div', class_='promotions')
     guts_promos = []
@@ -71,7 +82,7 @@ def scrape_guts(html, rooms):
         guts_promos.append(one_promo)
     return guts_promos
 
-def scrape_pokerstars(html, rooms):
+def scrape_pokerstars(html, rooms, promos_url):
     soup = BeautifulSoup(html, "html.parser")
     section = soup.find(id='portalWrap')
     pokerstars_promos = []
@@ -89,11 +100,32 @@ def scrape_pokerstars(html, rooms):
         pokerstars_promos.append(one_promo)
     return pokerstars_promos
 
+def scrape_coral(html, rooms, promos_url):
+    soup = BeautifulSoup(html, "html.parser")
+    section = soup.find('div', class_='bigpromotionContainer')
+    coral_promos = []
+    promo_type = promos_url.split('/')[3]
+    for item in section.find_all('div', class_='item'):
+        promo_title = item.h1.string
+        try:
+            promo_desc = item.p.string
+        except:
+            promo_desc = None
+            print(promo_title+'has mistake in description')
+        promo_link = None
+        promo_image_link = item.img.get('src').split('?')[0]
+        promo_room = rooms['coral']
+        one_promo = (promo_title, promo_desc, promo_type, promo_link,
+                     promo_image_link, promo_room)
+        coral_promos.append(one_promo)
+    return coral_promos
+
 promos_urls = {
                betsafe_promos_urls: scrape_betsafe,
                triobet_promos_urls: scrape_triobet,
                guts_promos_urls: scrape_guts,
                pokerstars_promos_urls: scrape_pokerstars,
+               coral_promos_urls: scrape_coral,
                }
 
 def create_tables():
@@ -102,6 +134,7 @@ def create_tables():
         ("triobet",),
         ("guts",),
         ("pokerstars",),
+        ("coral",),
         )
     conn = sqlite3.connect('pps.sqlite3')
     with conn:
@@ -193,20 +226,22 @@ def main():
     rooms = get_rooms()
     for urls in list(promos_urls.keys()):
         for url in urls:
-            print(url)
-            i=promos_urls[urls](get_html(url), rooms)
+            i=promos_urls[urls](get_html(url), rooms, url)
             scraped_promos = scraped_promos+i
             print(str(len(i))+' promos were scraped from '+url)
-    sys.exit()
     print('in total '+str(len(scraped_promos))+' promos were scraped from '\
           +str(len(promos_urls))+' websites')
+    #print(scraped_promos)
     base_promos = get_promos()
     print('there are '+str(len(base_promos))+' active promotions in db')
     #compared_promos equals to [new_promos, inactive_promos]
     compared_promos = compare_promos(base_promos, scraped_promos)
     print('there are '+str(len(compared_promos[0]))+' new promotions and '+\
           str(len(compared_promos[1]))+' inactive promotions')
+    #sys.exit()
     insert_promos(compared_promos)
+    print('end')
+
 
 if __name__ == '__main__':
     main()
