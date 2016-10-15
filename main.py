@@ -12,6 +12,16 @@ guts_promos_urls = ('https://www.guts.com/en/poker/promotions/',)
 #pokerstars
 pokerstars_promos_urls = ('https://www.pokerstars.com/poker/promotions/',)
 #ipoker
+betfred_promos_urls = (
+                       'http://www.betfred.com/promotions/Sports',
+                       'http://www.betfred.com/promotions/Casino',
+                       #'http://www.betfred.com/promotions/Lottery',no coz some img have diff links
+                       'http://www.betfred.com/promotions/Poker',
+                       'http://www.betfred.com/promotions/Virtual',
+                       'http://www.betfred.com/promotions/Bingo',
+                       'http://www.betfred.com/games/promotions',
+                       )
+                       
 coral_promos_urls = ('http://www.coral.co.uk/lotto/offers/',
                      'http://www.coral.co.uk/poker/offers/',
                      'http://www.coral.co.uk/poker/tournaments/',
@@ -20,6 +30,13 @@ coral_promos_urls = ('http://www.coral.co.uk/lotto/offers/',
 #uncommented doesnt work coz renders on client?                     
 #                     'http://www.coral.co.uk/bingo/promotions/',
                      )
+#betfair_promos_urls = ('https://promos.betfair.com/sport/',
+#                     'https://promos.betfair.com/arcade/',
+#                     'https://promos.betfair.com/macau/',
+#                     'https://casino.betfair.com/promotions/',
+#                     'https://poker.betfair.com/promotions/',
+#                     'https://bingo.betfair.com/promotions/',
+#                     )
 
 def get_html(url):
     req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
@@ -105,13 +122,14 @@ def scrape_coral(html, rooms, promos_url):
     section = soup.find('div', class_='bigpromotionContainer')
     coral_promos = []
     promo_type = promos_url.split('/')[3]
+    if promo_type == 'gaming': promo_type = 'casino'
     for item in section.find_all('div', class_='item'):
         promo_title = item.h1.string
         try:
             promo_desc = item.p.string
         except:
             promo_desc = None
-            print(promo_title+'has mistake in description')
+            print(promo_title+' has mistake in description')
         promo_link = None
         promo_image_link = item.img.get('src').split('?')[0]
         promo_room = rooms['coral']
@@ -120,11 +138,47 @@ def scrape_coral(html, rooms, promos_url):
         coral_promos.append(one_promo)
     return coral_promos
 
+def scrape_betfred(html, rooms, promos_url):
+    soup = BeautifulSoup(html, "html.parser")
+    section = soup.find(id='centerbar')
+    promo_type = promos_url.split('/')[-1].lower()
+    if not section:
+        section = soup.find('div', class_='wrapper_976')
+        promo_type = 'casino'
+    betfred_promos = []
+    for item in section.find_all('div', class_='promoholder'):
+        if len(item.get_text())<40:
+            continue #to get rid of empty div's in games
+        promo_title = item.h2.string
+        promo_desc_p = item.find_all('p')
+        promo_desc = []
+        for p in promo_desc_p:
+            if p.get_text().lower() != 'terms & conditions':
+                promo_desc.append(p.get_text())
+        promo_desc = '\n'.join(promo_desc)
+        promo_link = None
+        if item.find_all('div', class_='button'):
+            for button in item.find_all('div', class_='button'):
+                button_text = button.a.string.lower()
+                if button_text.startswith('more detail'):
+                    promo_link = button.a.get('href')
+                    if not promo_link.startswith("http:"):
+                        promo_link = 'http://www.betfred.com'+promo_link
+        promo_image_link = item.img.get('src')
+        promo_room = rooms['betfred']
+        one_promo = (promo_title, promo_desc, promo_type, promo_link,
+                     promo_image_link, promo_room)
+        betfred_promos.append(one_promo)
+    return betfred_promos
+
+
 promos_urls = {
                betsafe_promos_urls: scrape_betsafe,
                triobet_promos_urls: scrape_triobet,
                guts_promos_urls: scrape_guts,
                pokerstars_promos_urls: scrape_pokerstars,
+               betfred_promos_urls: scrape_betfred,
+#               betfair_promos_urls: scrape_betfair,
                coral_promos_urls: scrape_coral,
                }
 
@@ -134,6 +188,8 @@ def create_tables():
         ("triobet",),
         ("guts",),
         ("pokerstars",),
+        ("betfred",),
+        ("betfair",),
         ("coral",),
         )
     conn = sqlite3.connect('pps.sqlite3')
@@ -238,6 +294,13 @@ def main():
     compared_promos = compare_promos(base_promos, scraped_promos)
     print('there are '+str(len(compared_promos[0]))+' new promotions and '+\
           str(len(compared_promos[1]))+' inactive promotions')
+    print('new promotions:')
+    for i in compared_promos[0]:
+        print(i)
+    ##########################
+    print('inactive promotions:')
+    for i in compared_promos[1]:
+        print(i)    
     #sys.exit()
     insert_promos(compared_promos)
     print('end')
