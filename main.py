@@ -9,6 +9,10 @@ betsafe_promos_urls = ('https://www.betsafe.com/en/specialoffers/',)
 triobet_promos_urls = ('https://www.triobet.com/en/promotions/',)
 #despite 'poker' in guts' url, there are all promos
 guts_promos_urls = ('https://www.guts.com/en/poker/promotions/',)
+olybet_promos_urls = ('https://promo.olybet.com/com/sports/promotions/',
+                      'https://promo.olybet.com/com/casino/promotions/',
+                      'https://promo.olybet.com/com/poker/promotions/',
+                      )
 #pokerstars
 pokerstars_promos_urls = ('https://www.pokerstars.com/poker/promotions/',)
 #ipoker
@@ -99,6 +103,24 @@ def scrape_guts(html, rooms, promos_url):
         guts_promos.append(one_promo)
     return guts_promos
 
+def scrape_olybet(html, rooms, promos_url):
+    soup = BeautifulSoup(html, "html.parser")
+    div = soup.find(id='offers-list')
+    olybet_promos = []
+    promo_type = promos_url.split('/')[-3]
+    for item in div.find_all('li'):
+        promo_title = item.find('span').string
+        promo_desc = None
+        promo_link = 'https://promo.olybet.com'+item.a.get('href')
+        promo_image_link = item.img.get('src')
+        promo_room = rooms['guts']
+        one_promo = (promo_title, promo_desc, promo_type, promo_link,
+                     promo_image_link, promo_room)
+        olybet_promos.append(one_promo)
+    return olybet_promos
+
+
+
 def scrape_pokerstars(html, rooms, promos_url):
     soup = BeautifulSoup(html, "html.parser")
     section = soup.find(id='portalWrap')
@@ -176,6 +198,7 @@ promos_urls = {
                betsafe_promos_urls: scrape_betsafe,
                triobet_promos_urls: scrape_triobet,
                guts_promos_urls: scrape_guts,
+               olybet_promos_urls: scrape_olybet,
                pokerstars_promos_urls: scrape_pokerstars,
                betfred_promos_urls: scrape_betfred,
 #               betfair_promos_urls: scrape_betfair,
@@ -187,6 +210,7 @@ def create_tables():
         ("betsafe",),
         ("triobet",),
         ("guts",),
+        ("olybet",),
         ("pokerstars",),
         ("betfred",),
         ("betfair",),
