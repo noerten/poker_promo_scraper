@@ -19,7 +19,7 @@ pokerstars_promos_urls = ('https://www.pokerstars.com/poker/promotions/',)
 betfred_promos_urls = (
                        'http://www.betfred.com/promotions/Sports',
                        'http://www.betfred.com/promotions/Casino',
-                       #'http://www.betfred.com/promotions/Lottery',no coz some img have diff links
+                       'http://www.betfred.com/promotions/Lottery',
                        'http://www.betfred.com/promotions/Poker',
                        'http://www.betfred.com/promotions/Virtual',
                        'http://www.betfred.com/promotions/Bingo',
@@ -246,7 +246,7 @@ def get_promos():
     conn = sqlite3.connect('pps.sqlite3')
     with conn:
         cur=conn.cursor()
-        cur.execute("SELECT title, desc, type, link, image_link, room_id\
+        cur.execute("SELECT title, desc, type, link, room_id\
                     FROM promos WHERE is_active = 1")
         promos = cur.fetchall()
         return promos
@@ -262,12 +262,12 @@ def insert_promos(compared_promos):
             cur.executemany('INSERT INTO promos (title, desc, type, link,\
                             image_link, room_id) VALUES (?,?,?,?,?,?)', new_promos)
         if inactive_promos:
-            cur.execute("SELECT id, title, desc, type, link, image_link, room_id\
+            cur.execute("SELECT id, title, desc, type, link, room_id\
                         FROM promos WHERE is_active = 1")
             rows = cur.fetchall()
             promos_dict = {}
             for row in rows:
-                promo_wo_id = (row[1], row[2], row[3], row[4], row[5], row[6])
+                promo_wo_id = (row[1], row[2], row[3], row[4], row[5],)
                 promo_id = row[0]
                 promos_dict[promo_wo_id] = promo_id
             for i in inactive_promos:
@@ -284,15 +284,21 @@ def insert_promos(compared_promos):
 #            cur.executemany('UPDATE promos SET is_active = 0 WHERE id IN ?', inactive_ids)
 
 def compare_promos(base_promos, scraped_promos):
+    #base wo image, scraped with
     new_promos = []
     inactive_promos = []
+    scraped_promos_wo_image = []
     for i in scraped_promos:
-        if i not in base_promos:
+        #coz image links sometimes change esp for betfred
+        wo_image=i[:4]+(i[-1],)
+        scraped_promos_wo_image.append(wo_image)
+        if wo_image not in base_promos:
             new_promos.append(i)
     for i in base_promos:
-        if i not in scraped_promos:
+        if i not in scraped_promos_wo_image:
             inactive_promos.append(i)
 #    print(inactive_promos)
+#new promos with image, inactive without
     return [new_promos, inactive_promos]
 
 def print_tv(a):
@@ -321,6 +327,7 @@ def main():
     print('new promotions:')
     for i in compared_promos[0]:
         print(i)
+        print('---')
     ##########################
     print('inactive promotions:')
     for i in compared_promos[1]:
