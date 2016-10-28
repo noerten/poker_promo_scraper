@@ -127,6 +127,8 @@ def scrape_pokerstars(html, rooms, promos_url):
     pokerstars_promos = []
     for item in section.find_all('div', class_='promoPromotion'):
         promo_type = item.a.get('href').split('/')[1]
+        if promo_type == 'vip':
+            promo_type = 'poker'
         promo_title = item.find('div', class_='promoThumbText')
         promo_title.span.extract()
         promo_title = promo_title.get_text()
@@ -187,23 +189,35 @@ def scrape_betfred(html, rooms, promos_url):
                     if not promo_link.startswith("http:"):
                         promo_link = 'http://www.betfred.com'+promo_link
         promo_image_link = item.img.get('src')
+        
+        if not promo_image_link.startswith("http:"):
+            promo_image_link = 'http://www.betfred.com'+promo_image_link
         promo_room = rooms['betfred']
         one_promo = (promo_title, promo_desc, promo_type, promo_link,
                      promo_image_link, promo_room)
         betfred_promos.append(one_promo)
     return betfred_promos
 
+def testing():
+    return False
 
-promos_urls = {
-               betsafe_promos_urls: scrape_betsafe,
-               triobet_promos_urls: scrape_triobet,
-               guts_promos_urls: scrape_guts,
-               olybet_promos_urls: scrape_olybet,
-               pokerstars_promos_urls: scrape_pokerstars,
-               betfred_promos_urls: scrape_betfred,
-#               betfair_promos_urls: scrape_betfair,
-               coral_promos_urls: scrape_coral,
-               }
+
+if testing() == False:  
+    promos_urls = {
+                   betsafe_promos_urls: scrape_betsafe,
+                   triobet_promos_urls: scrape_triobet,
+                   guts_promos_urls: scrape_guts,
+                   olybet_promos_urls: scrape_olybet,
+                   pokerstars_promos_urls: scrape_pokerstars,
+                   betfred_promos_urls: scrape_betfred,
+    #               betfair_promos_urls: scrape_betfair,
+                   coral_promos_urls: scrape_coral,
+                   }
+elif testing() == True:  
+    promos_urls = {
+                   betfred_promos_urls: scrape_betfred,
+                   }
+print('testing'+str(testing()))
 
 def create_tables():
     rooms = (
@@ -329,10 +343,11 @@ def main():
         print(i)
         print('---')
     ##########################
+    if testing() == True:
+        sys.exit()
     print('inactive promotions:')
     for i in compared_promos[1]:
-        print(i)    
-    #sys.exit()
+        print(i)
     insert_promos(compared_promos)
     print('end')
 
