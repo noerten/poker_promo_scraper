@@ -144,9 +144,10 @@ def scrape_olybet(html, rooms, promos_url):
     return olybet_promos
 
 def scrape_pokerstars(html, rooms, promos_url):
+    base_url = 'https://www.pokerstars.com'
     soup = BeautifulSoup(html, "html.parser")
     section = soup.find(id='portalWrap')
-    pokerstars_promos = []
+    room_promos = []
     for item in section.find_all('div', class_='promoPromotion'):
         promo_type = item.a.get('href').split('/')[1]
         if promo_type == 'vip':
@@ -155,18 +156,21 @@ def scrape_pokerstars(html, rooms, promos_url):
         promo_title.span.extract()
         promo_title = promo_title.get_text()
         promo_desc = None
-        promo_link = 'https://www.pokerstars.com' + item.a.get('href')
-        promo_image_link = 'https://www.pokerstars.com' + item.img.get('src')
+        promo_link = item.a.get('href')
+        promo_image_link = item.img.get('src')
         promo_room = rooms['pokerstars']
+        promo_title, promo_desc, promo_link, promo_image_link = clear_promo_data(
+            promo_title, promo_desc, promo_link, promo_image_link, base_url)
         one_promo = (promo_title, promo_desc, promo_type, promo_link,
                      promo_image_link, promo_room)
-        pokerstars_promos.append(one_promo)
-    return pokerstars_promos
+        room_promos.append(one_promo)
+    return room_promos
 
 def scrape_coral(html, rooms, promos_url):
+    base_url = 'http://www.coral.co.uk'
     soup = BeautifulSoup(html, "html.parser")
     section = soup.find('div', class_='bigpromotionContainer')
-    coral_promos = []
+    room_promos = []
     promo_type = promos_url.split('/')[3]
     if promo_type == 'gaming': promo_type = 'casino'
     for item in section.find_all('div', class_='item'):
@@ -179,10 +183,12 @@ def scrape_coral(html, rooms, promos_url):
         promo_link = None
         promo_image_link = item.img.get('src').split('?')[0]
         promo_room = rooms['coral']
+        promo_title, promo_desc, promo_link, promo_image_link = clear_promo_data(
+            promo_title, promo_desc, promo_link, promo_image_link, base_url)
         one_promo = (promo_title, promo_desc, promo_type, promo_link,
                      promo_image_link, promo_room)
-        coral_promos.append(one_promo)
-    return coral_promos
+        room_promos.append(one_promo)
+    return room_promos
 
 def scrape_betfred(html, rooms, promos_url):
     base_url = 'http://www.betfred.com'
@@ -228,12 +234,10 @@ def scrape_betfair_main(html, rooms, promos_url):
     #find only direct children
     for item in container.find_all('li',recursive=False):
         promo_type = item['class'][0].split('-')[1]
-        
         if promo_type == 'sportsbook':
             promo_type == 'sports'
             promo_title = item.find('p', class_='promo-title').string
             promo_desc = item.find('span').string
-
         else:
             promo_title = item.find('span').string
             try:
