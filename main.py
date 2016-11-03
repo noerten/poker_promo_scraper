@@ -67,9 +67,9 @@ def clear_promo_data(title, desc, link, img_link, base_url):
         desc = desc.strip(' \r\n\t')
     if link and not link.startswith("http"):
         link = base_url+link
-    if img_link and not img_link.startswith("http"):
+    if img_link and img_link.startswith("/"):
         img_link = base_url+img_link
-    return title, desc, link, img_links
+    return title, desc, link, img_link
 
 def scrape_betsafe(html, rooms, promos_url):
     soup = BeautifulSoup(html, "html.parser")
@@ -185,13 +185,14 @@ def scrape_coral(html, rooms, promos_url):
     return coral_promos
 
 def scrape_betfred(html, rooms, promos_url):
+    base_url = 'http://www.betfred.com'
     soup = BeautifulSoup(html, "html.parser")
     section = soup.find(id='centerbar')
     promo_type = promos_url.split('/')[-1].lower()
     if not section:
         section = soup.find('div', class_='wrapper_976')
         promo_type = 'casino'
-    betfred_promos = []
+    room_promos = []
     for item in section.find_all('div', class_='promoholder'):
         if len(item.get_text())<40:
             continue #to get rid of empty div's in games
@@ -208,23 +209,21 @@ def scrape_betfred(html, rooms, promos_url):
                 button_text = button.a.string.lower()
                 if button_text.startswith('more detail'):
                     promo_link = button.a.get('href')
-                    if not promo_link.startswith("http:"):
-                        promo_link = 'http://www.betfred.com'+promo_link
         promo_image_link = item.img.get('src')
-        
-        if not promo_image_link.startswith("http:"):
-            promo_image_link = 'http://www.betfred.com'+promo_image_link
         promo_room = rooms['betfred']
+        promo_title, promo_desc, promo_link, promo_image_link = clear_promo_data(
+            promo_title, promo_desc, promo_link, promo_image_link, base_url)
         one_promo = (promo_title, promo_desc, promo_type, promo_link,
                      promo_image_link, promo_room)
-        betfred_promos.append(one_promo)
-    return betfred_promos
+        room_promos.append(one_promo)
+    return room_promos
 
 def scrape_betfair_main(html, rooms, promos_url):
     #using html5lib coz of mistakes? on the page and html.parser doesnt find
     # needed tags
     soup = BeautifulSoup(html, "html5lib")
     room_promos = []
+    base_url = 'https://promos.betfair.com'
     container = soup.find('ul', class_="promo-hub")
     #find only direct children
     for item in container.find_all('li',recursive=False):
@@ -241,13 +240,15 @@ def scrape_betfair_main(html, rooms, promos_url):
                 promo_desc = item.find('p').string
             except AttributeError:
                 promo_desc = None
-        promo_link = 'https://promos.betfair.com'+item.a.get('href')
+        promo_link = item.a.get('href')
         promo_image_cont = item.find('div', class_='banner-image')['style']
         promo_image_link = re.findall("\('(.*?)'\)", promo_image_cont)[0]
         promo_room = rooms['betfair']
+        promo_title, promo_desc, promo_link, promo_image_link = clear_promo_data(
+            promo_title, promo_desc, promo_link, promo_image_link, base_url)
         one_promo = (promo_title, promo_desc, promo_type, promo_link,
                      promo_image_link, promo_room)
-        room_promos.append(one_promo)        
+        room_promos.append(one_promo)
     return room_promos
 
 def scrape_betfair_poker(html, rooms, promos_url):
@@ -290,7 +291,7 @@ def scrape_mansion(html, rooms, promos_url):
 
 def testing():
     a = (True, False)
-    return a[0]
+    return a[1]
 
 if testing() == False:  
     promos_urls = {
