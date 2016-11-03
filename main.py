@@ -36,7 +36,7 @@ coral_promos_urls = ('http://www.coral.co.uk/lotto/offers/',
 #uncommented doesnt work coz renders on client?                     
 #                     'http://www.coral.co.uk/bingo/promotions/',
                      )
-betfair_promos_urls = ('https://promos.betfair.com/sport',
+betfair_main_promos_urls = ('https://promos.betfair.com/sport',
                      'https://promos.betfair.com/arcade',
                      'https://promos.betfair.com/macau',
 #uncommented coz diff structure and show only first dep bonuses
@@ -46,6 +46,11 @@ betfair_promos_urls = ('https://promos.betfair.com/sport',
 #uncommented coz diff structure and i dont use bingo promos
 #                     'https://bingo.betfair.com/promotions',
                      )
+betfair_poker_promos_urls = (
+                      'https://poker.betfair.com/promotions',
+                     )
+
+
 
 def get_html(url):
     try:
@@ -206,14 +211,12 @@ def scrape_betfred(html, rooms, promos_url):
         betfred_promos.append(one_promo)
     return betfred_promos
 
-def scrape_betfair(html, rooms, promos_url):
-    print(promos_url)
+def scrape_betfair_main(html, rooms, promos_url):
     #using html5lib coz of mistakes? on the page and html.parser doesnt find
     # needed tags
     soup = BeautifulSoup(html, "html5lib")
-    
-    container = soup.find('ul', class_="promo-hub")
     room_promos = []
+    container = soup.find('ul', class_="promo-hub")
     #find only direct children
     for item in container.find_all('li',recursive=False):
         promo_type = item['class'][0].split('-')[1]
@@ -230,20 +233,34 @@ def scrape_betfair(html, rooms, promos_url):
             except AttributeError:
                 promo_desc = None
         promo_link = 'https://promos.betfair.com'+item.a.get('href')
-        #####
         promo_image_cont = item.find('div', class_='banner-image')['style']
         promo_image_link = re.findall("\('(.*?)'\)", promo_image_cont)[0]
         promo_room = rooms['betfair']
         one_promo = (promo_title, promo_desc, promo_type, promo_link,
                      promo_image_link, promo_room)
-        room_promos.append(one_promo)
-        print(one_promo)
-    print(room_promos)
-        
+        room_promos.append(one_promo)        
+    return room_promos
+
+def scrape_betfair_poker(html, rooms, promos_url):
+    soup = BeautifulSoup(html, "html5lib")
+    room_promos = []
+    promo_type = 'poker'
+    container = soup.find(id="right-column")
+    for item in container.find_all('li'):
+        promo_title = item.find('h2', class_='promotion-caption').string
+        promo_desc = item.find('span', class_='promotion-title-caption').p.string
+        promo_link = item.a.get('href')
+        if not promo_link.startswith("http"):
+            promo_link = 'https://poker.betfair.com'+promo_link
+        promo_image_link = item.img.get('src')
+        promo_room = rooms['betfair']
+        one_promo = (promo_title, promo_desc, promo_type, promo_link,
+                     promo_image_link, promo_room)
+        room_promos.append(one_promo)        
     return room_promos
 
 def testing():
-    return True
+    return False
 
 if testing() == False:  
     promos_urls = {
@@ -253,12 +270,13 @@ if testing() == False:
                    olybet_promos_urls: scrape_olybet,
                    pokerstars_promos_urls: scrape_pokerstars,
                    betfred_promos_urls: scrape_betfred,
-    #               betfair_promos_urls: scrape_betfair,
+                   betfair_main_promos_urls: scrape_betfair_main,
+                   betfair_poker_promos_urls: scrape_betfair_poker,
                    coral_promos_urls: scrape_coral,
                    }
 elif testing() == True:  
     promos_urls = {
-                   betfair_promos_urls: scrape_betfair,
+                   betfair_poker_promos_urls: scrape_betfair_poker,
                    }
 print('testing: '+str(testing()))
 
@@ -364,7 +382,6 @@ def print_tv(a):
     
 def main():
     scraped_promos = []
-    
     error_counter = 0
     create_tables()
     print('tables ok')
@@ -380,7 +397,8 @@ def main():
                 i=promos_urls[urls](html, rooms, url)
                 scraped_promos = scraped_promos+i
                 print(str(len(i))+' promos were scraped from '+url)
-        
+    #delete dublicates
+    scraped_promos = set(scraped_promos)    
     print('in total '+str(len(scraped_promos))+' promos were scraped from '\
           +str(len(promos_urls))+' websites')
     #print(scraped_promos)
