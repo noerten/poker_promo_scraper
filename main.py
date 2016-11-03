@@ -60,7 +60,17 @@ def get_html(url):
         error_desc = 'HTTP Error %s: %s at URL %s' % (err.code, err.msg, url)
         return('error', error_desc)
         #raise
-    
+
+def clear_promo_data(title, desc, link, img_link, base_url):
+    title = title.strip(' \r\n\t')
+    if desc:
+        desc = desc.strip(' \r\n\t')
+    if link and not link.startswith("http"):
+        link = base_url+link
+    if img_link and not img_link.startswith("http"):
+        img_link = base_url+img_link
+    return title, desc, link, img_links
+
 def scrape_betsafe(html, rooms, promos_url):
     soup = BeautifulSoup(html, "html.parser")
     grid = soup.find(id='ArticleGrid')
@@ -241,6 +251,7 @@ def scrape_betfair_main(html, rooms, promos_url):
     return room_promos
 
 def scrape_betfair_poker(html, rooms, promos_url):
+    base_url = 'https://poker.betfair.com'
     soup = BeautifulSoup(html, "html5lib")
     room_promos = []
     promo_type = 'poker'
@@ -249,26 +260,29 @@ def scrape_betfair_poker(html, rooms, promos_url):
         promo_title = item.find('h2', class_='promotion-caption').string
         promo_desc = item.find('span', class_='promotion-title-caption').p.string
         promo_link = item.a.get('href')
-        if not promo_link.startswith("http"):
-            promo_link = 'https://poker.betfair.com'+promo_link
         promo_image_link = item.img.get('src')
         promo_room = rooms['betfair']
+        promo_title, promo_desc, promo_link, promo_image_link = clear_promo_data(
+            promo_title, promo_desc, promo_link, promo_image_link, base_url)
         one_promo = (promo_title, promo_desc, promo_type, promo_link,
                      promo_image_link, promo_room)
-        room_promos.append(one_promo)        
+        room_promos.append(one_promo)
     return room_promos
 
 def scrape_mansion(html, rooms, promos_url):
+    base_url = 'http://www.mansionpoker.com'
     soup = BeautifulSoup(html, "html.parser")
     room_promos = []
     promo_type = 'poker'
     container = soup.find(id="inner_content")
     for item in container.find_all('div', class_='simple-node-wrapper'):
-        promo_title = item.find('div', class_='content').h3.string.strip(' \r\n\t')
-        promo_desc = item.find('p').get_text().strip(' \r\n\t')
-        promo_link = 'http://www.mansionpoker.com'+item.a.get('href')
-        promo_image_link = 'http://www.mansionpoker.com'+item.img.get('src')
+        promo_title = item.find('div', class_='content').h3.string
+        promo_desc = item.find('p').get_text()
+        promo_link = item.a.get('href')
+        promo_image_link = item.img.get('src')
         promo_room = rooms['mansion']
+        promo_title, promo_desc, promo_link, promo_image_link = clear_promo_data(
+            promo_title, promo_desc, promo_link, promo_image_link, base_url)
         one_promo = (promo_title, promo_desc, promo_type, promo_link,
                      promo_image_link, promo_room)
         room_promos.append(one_promo)
@@ -276,7 +290,7 @@ def scrape_mansion(html, rooms, promos_url):
 
 def testing():
     a = (True, False)
-    return a[1]
+    return a[0]
 
 if testing() == False:  
     promos_urls = {
