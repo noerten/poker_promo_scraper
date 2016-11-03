@@ -37,21 +37,20 @@ coral_promos_urls = ('http://www.coral.co.uk/lotto/offers/',
 #                     'http://www.coral.co.uk/bingo/promotions/',
                      )
 betfair_main_promos_urls = ('https://promos.betfair.com/sport',
-                     'https://promos.betfair.com/arcade',
-                     'https://promos.betfair.com/macau',
+                            'https://promos.betfair.com/arcade',
+                            'https://promos.betfair.com/macau',
 #uncommented coz diff structure and show only first dep bonuses
-#                     'https://casino.betfair.com/promotions',
-#                     'https://poker.betfair.com/promotions',
-
+#                           'https://casino.betfair.com/promotions',
 #uncommented coz diff structure and i dont use bingo promos
-#                     'https://bingo.betfair.com/promotions',
+#                           'https://bingo.betfair.com/promotions',
                      )
 betfair_poker_promos_urls = (
-                      'https://poker.betfair.com/promotions',
-                     )
-
-
-
+                             'https://poker.betfair.com/promotions',
+                             )
+mansion_promos_urls = (
+                       'http://www.mansionpoker.com/promotions',
+                       )
+    
 def get_html(url):
     try:
         req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
@@ -259,8 +258,25 @@ def scrape_betfair_poker(html, rooms, promos_url):
         room_promos.append(one_promo)        
     return room_promos
 
+def scrape_mansion(html, rooms, promos_url):
+    soup = BeautifulSoup(html, "html.parser")
+    room_promos = []
+    promo_type = 'poker'
+    container = soup.find(id="inner_content")
+    for item in container.find_all('div', class_='simple-node-wrapper'):
+        promo_title = item.find('div', class_='content').h3.string.strip(' \r\n\t')
+        promo_desc = item.find('p').get_text().strip(' \r\n\t')
+        promo_link = 'http://www.mansionpoker.com'+item.a.get('href')
+        promo_image_link = 'http://www.mansionpoker.com'+item.img.get('src')
+        promo_room = rooms['mansion']
+        one_promo = (promo_title, promo_desc, promo_type, promo_link,
+                     promo_image_link, promo_room)
+        room_promos.append(one_promo)
+    return room_promos
+
 def testing():
-    return False
+    a = (True, False)
+    return a[1]
 
 if testing() == False:  
     promos_urls = {
@@ -273,10 +289,11 @@ if testing() == False:
                    betfair_main_promos_urls: scrape_betfair_main,
                    betfair_poker_promos_urls: scrape_betfair_poker,
                    coral_promos_urls: scrape_coral,
+                   mansion_promos_urls: scrape_mansion,
                    }
 elif testing() == True:  
     promos_urls = {
-                   betfair_poker_promos_urls: scrape_betfair_poker,
+                   mansion_promos_urls: scrape_mansion,
                    }
 print('testing: '+str(testing()))
 
@@ -290,6 +307,7 @@ def create_tables():
         ("betfred",),
         ("betfair",),
         ("coral",),
+        ("mansion",),
         )
     conn = sqlite3.connect('pps.sqlite3')
     with conn:
