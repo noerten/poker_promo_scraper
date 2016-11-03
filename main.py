@@ -1,8 +1,11 @@
 import datetime
+import re
 import sqlite3
 import sys
 import urllib.request
+
 from bs4 import BeautifulSoup
+import html5lib
 
 #MPN
 betsafe_promos_urls = ('https://www.betsafe.com/en/specialoffers/',)
@@ -25,7 +28,6 @@ betfred_promos_urls = (
                        'http://www.betfred.com/promotions/Bingo',
                        'http://www.betfred.com/games/promotions',
                        )
-                       
 coral_promos_urls = ('http://www.coral.co.uk/lotto/offers/',
                      'http://www.coral.co.uk/poker/offers/',
                      'http://www.coral.co.uk/poker/tournaments/',
@@ -34,19 +36,27 @@ coral_promos_urls = ('http://www.coral.co.uk/lotto/offers/',
 #uncommented doesnt work coz renders on client?                     
 #                     'http://www.coral.co.uk/bingo/promotions/',
                      )
-#betfair_promos_urls = ('https://promos.betfair.com/sport/',
-#                     'https://promos.betfair.com/arcade/',
-#                     'https://promos.betfair.com/macau/',
-#                     'https://casino.betfair.com/promotions/',
-#                     'https://poker.betfair.com/promotions/',
-#                     'https://bingo.betfair.com/promotions/',
-#                     )
+betfair_promos_urls = ('https://promos.betfair.com/sport',
+                     'https://promos.betfair.com/arcade',
+                     'https://promos.betfair.com/macau',
+#uncommented coz diff structure and show only first dep bonuses
+#                     'https://casino.betfair.com/promotions',
+#                     'https://poker.betfair.com/promotions',
+
+#uncommented coz diff structure and i dont use bingo promos
+#                     'https://bingo.betfair.com/promotions',
+                     )
 
 def get_html(url):
-    req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-    webpage = urllib.request.urlopen(req).read()                             
-    return webpage
-
+    try:
+        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+        webpage = urllib.request.urlopen(req).read()
+        return webpage
+    except urllib.error.HTTPError as err:
+        error_desc = 'HTTP Error %s: %s at URL %s' % (err.code, err.msg, url)
+        return('error', error_desc)
+        #raise
+    
 def scrape_betsafe(html, rooms, promos_url):
     soup = BeautifulSoup(html, "html.parser")
     grid = soup.find(id='ArticleGrid')
@@ -118,8 +128,6 @@ def scrape_olybet(html, rooms, promos_url):
                      promo_image_link, promo_room)
         olybet_promos.append(one_promo)
     return olybet_promos
-
-
 
 def scrape_pokerstars(html, rooms, promos_url):
     soup = BeautifulSoup(html, "html.parser")
@@ -198,9 +206,44 @@ def scrape_betfred(html, rooms, promos_url):
         betfred_promos.append(one_promo)
     return betfred_promos
 
-def testing():
-    return False
+def scrape_betfair(html, rooms, promos_url):
+    print(promos_url)
+    #using html5lib coz of mistakes? on the page and html.parser doesnt find
+    # needed tags
+    soup = BeautifulSoup(html, "html5lib")
+    
+    container = soup.find('ul', class_="promo-hub")
+    room_promos = []
+    #find only direct children
+    for item in container.find_all('li',recursive=False):
+        promo_type = item['class'][0].split('-')[1]
+        
+        if promo_type == 'sportsbook':
+            promo_type == 'sports'
+            promo_title = item.find('p', class_='promo-title').string
+            promo_desc = item.find('span').string
 
+        else:
+            promo_title = item.find('span').string
+            try:
+                promo_desc = item.find('p').string
+            except AttributeError:
+                promo_desc = None
+        promo_link = 'https://promos.betfair.com'+item.a.get('href')
+        #####
+        promo_image_cont = item.find('div', class_='banner-image')['style']
+        promo_image_link = re.findall("\('(.*?)'\)", promo_image_cont)[0]
+        promo_room = rooms['betfair']
+        one_promo = (promo_title, promo_desc, promo_type, promo_link,
+                     promo_image_link, promo_room)
+        room_promos.append(one_promo)
+        print(one_promo)
+    print(room_promos)
+        
+    return room_promos
+
+def testing():
+    return True
 
 if testing() == False:  
     promos_urls = {
@@ -215,9 +258,9 @@ if testing() == False:
                    }
 elif testing() == True:  
     promos_urls = {
-                   betfred_promos_urls: scrape_betfred,
+                   betfair_promos_urls: scrape_betfair,
                    }
-print('testing'+str(testing()))
+print('testing: '+str(testing()))
 
 def create_tables():
     rooms = (
@@ -321,14 +364,23 @@ def print_tv(a):
     
 def main():
     scraped_promos = []
+    
+    error_counter = 0
     create_tables()
     print('tables ok')
     rooms = get_rooms()
     for urls in list(promos_urls.keys()):
         for url in urls:
-            i=promos_urls[urls](get_html(url), rooms, url)
-            scraped_promos = scraped_promos+i
-            print(str(len(i))+' promos were scraped from '+url)
+            html = get_html(url)
+            if html[0] == 'error':
+                error_counter = error_counter + 1
+                print(html[1])
+                continue
+            else:       
+                i=promos_urls[urls](html, rooms, url)
+                scraped_promos = scraped_promos+i
+                print(str(len(i))+' promos were scraped from '+url)
+        
     print('in total '+str(len(scraped_promos))+' promos were scraped from '\
           +str(len(promos_urls))+' websites')
     #print(scraped_promos)
@@ -336,6 +388,7 @@ def main():
     print('there are '+str(len(base_promos))+' active promotions in db')
     #compared_promos equals to [new_promos, inactive_promos]
     compared_promos = compare_promos(base_promos, scraped_promos)
+    print('there are '+str(error_counter)+' mistakes')
     print('there are '+str(len(compared_promos[0]))+' new promotions and '+\
           str(len(compared_promos[1]))+' inactive promotions')
     print('new promotions:')
@@ -343,7 +396,8 @@ def main():
         print(i)
         print('---')
     ##########################
-    if testing() == True:
+    if testing() == True or error_counter > 0:
+        print('exiting and not saving to db coz testing == true or there are url mistakes')
         sys.exit()
     print('inactive promotions:')
     for i in compared_promos[1]:
@@ -354,3 +408,10 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+####
+#find all id
+#    result = []
+#    for tag in soup.findAll(True,{'id':True}) :
+#        result.append(tag['id'])
