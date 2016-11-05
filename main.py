@@ -1,4 +1,5 @@
 import datetime
+import json
 import re
 import sqlite3
 import sys
@@ -47,10 +48,25 @@ betfair_main_promos_urls = ('https://promos.betfair.com/sport',
 betfair_poker_promos_urls = (
                              'https://poker.betfair.com/promotions',
                              )
+#didnt add casino
 mansion_promos_urls = (
                        'http://www.mansionpoker.com/promotions',
                        )
-    
+
+netbet_sports_promos_urls = (
+                      'https://sportapi-sb.netbet.com/promotions',
+                      )
+netbet_poker_promos_urls = (
+                      'https://poker.netbet.com/eu/promotions',
+                      )
+##didnt added casino coz didnt find api
+netbet_casino_promos_urls = (
+                      'https://casino.netbet.com/eu/promotions-en',
+                      'https://vegas.netbet.com/en/promotion',
+                      )
+
+
+
 def get_html(url):
     try:
         req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
@@ -65,7 +81,7 @@ def clear_promo_data(title, desc, link, img_link, base_url):
     title = title.strip(' \r\n\t')
     if desc:
         desc = desc.strip(' \r\n\t')
-    if link and not link.startswith("http"):
+    if link and link.startswith("/"):
         link = base_url+link
     if img_link and img_link.startswith("/"):
         img_link = base_url+img_link
@@ -293,6 +309,66 @@ def scrape_mansion(html, rooms, promos_url):
         room_promos.append(one_promo)
     return room_promos
 
+def scrape_netbet_sports(html, rooms, promos_url):
+    base_url = 'https://sport.netbet.com'
+    json_obj = json.loads(html.decode("utf-8")[7:-2])
+    soup = BeautifulSoup(json_obj['html'], "html.parser")
+    room_promos = []
+    promo_type = 'sports'
+    for item in soup.find_all('div', class_='freeContentBlock'):
+        promo_title = item.h2.string
+        promo_desc = item.p.string
+        promo_link = item.a.get('href')
+        promo_image_link = item.find('div', class_='contentPage').img.get('src')
+        promo_room = rooms['netbet']
+        promo_title, promo_desc, promo_link, promo_image_link = clear_promo_data(
+            promo_title, promo_desc, promo_link, promo_image_link, base_url)
+        one_promo = (promo_title, promo_desc, promo_type, promo_link,
+                     promo_image_link, promo_room)
+        room_promos.append(one_promo)
+    return room_promos
+
+def scrape_netbet_poker(html, rooms, promos_url):
+    base_url = promos_url.rsplit('/', 2)[0]
+    soup = BeautifulSoup(html, "html.parser")
+    room_promos = []
+    promo_type = promos_url.split('.')[0].split('/')[-1].lower()
+    container = soup.find(class_="sect-white")
+    for item in container.find_all('div', class_='promo-box'):
+        promo_title = item.find('h2', class_='info-offer').span.string
+        promo_desc = item.find('div', class_='offer-details').p.string
+        promo_link = item.a.get('href')
+        promo_image_link = item.img.get('src')
+        promo_room = rooms['netbet']
+        promo_title, promo_desc, promo_link, promo_image_link = clear_promo_data(
+            promo_title, promo_desc, promo_link, promo_image_link, base_url)
+        one_promo = (promo_title, promo_desc, promo_type, promo_link,
+                     promo_image_link, promo_room)
+        room_promos.append(one_promo)
+    return room_promos
+
+def scrape_netbet_casino(html, rooms, promos_url):
+    base_url = promos_url.rsplit('/', 2)[0]
+    soup = BeautifulSoup(html, "html5lib")
+    room_promos = []
+    promo_type = promos_url.split('.')[0].split('/')[-1].lower()
+    container = soup.find(id="promo_content")
+    print (container)
+    for item in container.find_all('div', class_='promoBlk'):
+        promo_title = item.h3.string
+        promo_desc = item.p.string
+        promo_link = item.a.get('href')
+        promo_image_link = item.img.get('src')
+        promo_room = rooms['netbet']
+        promo_title, promo_desc, promo_link, promo_image_link = clear_promo_data(
+            promo_title, promo_desc, promo_link, promo_image_link, base_url)
+        one_promo = (promo_title, promo_desc, promo_type, promo_link,
+                     promo_image_link, promo_room)
+        room_promos.append(one_promo)
+        print(one_promo)
+    return room_promos
+
+
 def testing():
     a = (True, False)
     return a[1]
@@ -309,10 +385,12 @@ if testing() == False:
                    betfair_poker_promos_urls: scrape_betfair_poker,
                    coral_promos_urls: scrape_coral,
                    mansion_promos_urls: scrape_mansion,
+                   netbet_sports_promos_urls: scrape_netbet_sports,
+                   netbet_poker_promos_urls: scrape_netbet_poker,
                    }
 elif testing() == True:  
     promos_urls = {
-                   mansion_promos_urls: scrape_mansion,
+                   netbet_casino_promos_urls: scrape_netbet_casino,
                    }
 print('testing: '+str(testing()))
 
@@ -327,6 +405,7 @@ def create_tables():
         ("betfair",),
         ("coral",),
         ("mansion",),
+        ("netbet",),
         )
     conn = sqlite3.connect('pps.sqlite3')
     with conn:
