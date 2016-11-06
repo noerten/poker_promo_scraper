@@ -81,9 +81,9 @@ def clear_promo_data(title, desc, link, img_link, base_url):
     title = title.strip(' \r\n\t')
     if desc:
         desc = desc.strip(' \r\n\t')
-    if link and link.startswith("/"):
+    if link and not (link.startswith("//") or link.startswith("http")):
         link = base_url+link
-    if img_link and img_link.startswith("/"):
+    if img_link and not (img_link.startswith("//") or img_link.startswith("http")):
         img_link = base_url+img_link
     return title, desc, link, img_link
 
