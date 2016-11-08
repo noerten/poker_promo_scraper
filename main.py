@@ -340,57 +340,31 @@ def scrape_netbet_poker(html, rooms, promos_url):
         room.add_promo(promo.one_promo)
     return room.room_promos
 
-def scrape_netbet_casino(html, rooms, promos_url):
-    base_url = promos_url.rsplit('/', 2)[0]
-    soup = BeautifulSoup(html, "html5lib")
-    room_promos = []
-    promo_type = promos_url.split('.')[0].split('/')[-1].lower()
-    container = soup.find(id="promo_content")
-    for item in container.find_all('div', class_='promoBlk'):
-        promo_title = item.h3.string
-        promo_desc = item.p.string
-        promo_link = item.a.get('href')
-        promo_image_link = item.img.get('src')
-        promo_room = rooms['netbet']
-        promo_title, promo_desc, promo_link, promo_image_link = clear_promo_data(
-            promo_title, promo_desc, promo_link, promo_image_link, base_url)
-        one_promo = (promo_title, promo_desc, promo_type, promo_link,
-                     promo_image_link, promo_room)
-        room_promos.append(one_promo)
-        print(one_promo)
-    return room_promos
-
 def scrape_paddypower_poker(html, rooms, promos_url):
-    base_url = ''
+    room = Room_Promos(None, '')    
     json_obj = json.loads(html.decode("utf-8"))['data']
-    room_promos = []
-    promo_type = 'poker'
     for item in json_obj:
         if item['attributes']['promotion_hide']['attribute_value'] == '0':
-            promo_title = item['name']
+            promo = Promo()
+            promo.ptype = 'poker'
+            promo.ptitle = item['name']
             promo_desc_soup = BeautifulSoup(item['attributes']['promotion_description']['attribute_value'], "html.parser")
             for element in promo_desc_soup.find_all('li'):
                 element.insert(0, '\n')
             for element in promo_desc_soup.find_all('p'):
                 element.insert(0, '\n')
-            promo_desc = promo_desc_soup.get_text()
-            promo_link = 'http://poker.paddypower.com/promotions/#/'+item['alias']
-            promo_image_link = ('http://i.ppstatic.com/content/poker/'+
+            promo.pdesc = promo_desc_soup.get_text()
+            promo.plink = 'http://poker.paddypower.com/promotions/#/'+item['alias']
+            promo.pimage_link = ('http://i.ppstatic.com/content/poker/'+
                                 item['attributes']['promotion_media']['attribute_value'])
-            promo_room = rooms['paddypower']
-            promo_title, promo_desc, promo_link, promo_image_link = clear_promo_data(
-                promo_title, promo_desc, promo_link, promo_image_link, base_url)
-            one_promo = (promo_title, promo_desc, promo_type, promo_link,
-                         promo_image_link, promo_room)
-            room_promos.append(one_promo)
-    return room_promos
+            promo.clear_promo_data('paddypower', room.base_url) 
+            room.add_promo(promo.one_promo)
+    return room.room_promos
 
 def scrape_paddypower_casino(html, rooms, promos_url):
-    base_url = ''
-    soup = BeautifulSoup(html, "html.parser")
-    room_promos = []
-    promo_type = 'casino'
-    container = soup.find(id="content_frame")
+    room = Room_Promos(promos_url.rsplit('/', 2)[0], html)    
+    cont = room.soup.find(id="content_frame")
+    print(cont)
     for item in container.find_all('div', class_='promotion-list-item'):
         promo_link = item.a.get('href')
         promo_html = get_html(promo_link)
@@ -427,12 +401,11 @@ if not testing():
                    mansion_promos_urls: scrape_mansion,
                    netbet_sports_promos_urls: scrape_netbet_sports,
                    netbet_poker_promos_urls: scrape_netbet_poker,
-                  # netbet_casino_promos_urls: scrape_netbet_casino,#doesnt work
                    paddypower_poker_promos_urls: scrape_paddypower_poker,
                    }
 else:
     promos_urls = {
-                   netbet_poker_promos_urls: scrape_netbet_poker,
+                   paddypower_casino_promos_urls: scrape_paddypower_casino,
                    }
 print('testing: '+str(testing()))
 
