@@ -261,52 +261,42 @@ def scrape_betfred(html, rooms, promos_url):
 def scrape_betfair_main(html, rooms, promos_url):
     #using html5lib coz of mistakes? on the page and html.parser doesnt find
     # needed tags
-    soup = BeautifulSoup(html, "html5lib")
-    room_promos = []
-    base_url = 'https://promos.betfair.com'
-    container = soup.find('ul', class_="promo-hub")
+    room = Room_Promos('https://promos.betfair.com', html, "html5lib")
+    cont = room.soup.find('ul', class_="promo-hub")
     #find only direct children
-    for item in container.find_all('li',recursive=False):
-        promo_type = item['class'][0].split('-')[1]
-        if promo_type == 'sportsbook':
-            promo_type == 'sports'
-            promo_title = item.find('p', class_='promo-title').string
-            promo_desc = item.find('span').string
+    for item in cont.find_all('li',recursive=False):
+        promo = Promo()
+        promo.ptype = item['class'][0].split('-')[1]
+        if promo.ptype == 'sportsbook':
+            promo.ptype == 'sports'
+            promo.ptitle = item.find('p', class_='promo-title').string
+            promo.pdesc = item.find('span').string
         else:
-            promo_title = item.find('span').string
+            promo.ptitle = item.find('span').string
             try:
-                promo_desc = item.find('p').string
+                promo.pdesc = item.find('p').string
             except AttributeError:
-                promo_desc = None
-        promo_link = item.a.get('href')
+                promo.pdesc = None
+        promo.plink = item.a.get('href')
         promo_image_cont = item.find('div', class_='banner-image')['style']
-        promo_image_link = re.findall("\('(.*?)'\)", promo_image_cont)[0]
-        promo_room = rooms['betfair']
-        promo_title, promo_desc, promo_link, promo_image_link = clear_promo_data(
-            promo_title, promo_desc, promo_link, promo_image_link, base_url)
-        one_promo = (promo_title, promo_desc, promo_type, promo_link,
-                     promo_image_link, promo_room)
-        room_promos.append(one_promo)
-    return room_promos
+        promo.pimage_link = re.findall("\('(.*?)'\)", promo_image_cont)[0]
+        promo.clear_promo_data('betfair', room.base_url) 
+        room.add_promo(promo.one_promo)
+    return room.room_promos
 
 def scrape_betfair_poker(html, rooms, promos_url):
-    base_url = 'https://poker.betfair.com'
-    soup = BeautifulSoup(html, "html5lib")
-    room_promos = []
-    promo_type = 'poker'
-    container = soup.find(id="right-column")
-    for item in container.find_all('li'):
-        promo_title = item.find('h2', class_='promotion-caption').string
-        promo_desc = item.find('span', class_='promotion-title-caption').p.string
-        promo_link = item.a.get('href')
-        promo_image_link = item.img.get('src')
-        promo_room = rooms['betfair']
-        promo_title, promo_desc, promo_link, promo_image_link = clear_promo_data(
-            promo_title, promo_desc, promo_link, promo_image_link, base_url)
-        one_promo = (promo_title, promo_desc, promo_type, promo_link,
-                     promo_image_link, promo_room)
-        room_promos.append(one_promo)
-    return room_promos
+    room = Room_Promos('https://poker.betfair.com', html, "html5lib")
+    cont = room.soup.find(id="right-column")
+    for item in cont.find_all('li'):
+        promo = Promo()
+        promo.ptype = 'poker'
+        promo.ptitle = item.find('h2', class_='promotion-caption').string
+        promo.pdesc = item.find('span', class_='promotion-title-caption').p.string
+        promo.plink = item.a.get('href')
+        promo.pimage_link = item.img.get('src')
+        promo.clear_promo_data('betfair', room.base_url) 
+        room.add_promo(promo.one_promo)
+    return room.room_promos
 
 def scrape_mansion(html, rooms, promos_url):
     base_url = 'http://www.mansionpoker.com'
@@ -449,7 +439,6 @@ if not testing():
                    betfred_promos_urls: scrape_betfred,
                    betfair_main_promos_urls: scrape_betfair_main,
                    betfair_poker_promos_urls: scrape_betfair_poker,
-                   coral_promos_urls: scrape_coral,
                    mansion_promos_urls: scrape_mansion,
                    netbet_sports_promos_urls: scrape_netbet_sports,
                    netbet_poker_promos_urls: scrape_netbet_poker,
@@ -458,7 +447,7 @@ if not testing():
                    }
 else:
     promos_urls = {
-                   betfred_promos_urls: scrape_betfred,
+                   betfair_poker_promos_urls: scrape_betfair_poker,
                    }
 print('testing: '+str(testing()))
 
