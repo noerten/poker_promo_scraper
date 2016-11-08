@@ -98,10 +98,10 @@ def get_rooms():
         return rooms
 
 class Room_Promos:
-    def __init__(self, base_url, html):
+    def __init__(self, base_url, html, parser="html.parser"):
         self.base_url = base_url
         self.room_promos = []
-        self.soup = BeautifulSoup(html, "html.parser")
+        self.soup = BeautifulSoup(html, parser)
                 
     def add_promo(self, promo):
         self.room_promos.append(promo)
@@ -118,7 +118,7 @@ class Promo:
         self.proom = None
         
     def clear_promo_data(self, room, base_url):
-        self.promo_room = Promo.rooms[room]
+        self.proom = Promo.rooms[room]
         if self.ptitle:
             self.ptitle = self.ptitle.strip()
         if self.pdesc:
@@ -183,20 +183,18 @@ def scrape_guts(html, rooms, promos_url):
     return room.room_promos
 
 def scrape_olybet(html, rooms, promos_url):
-    soup = BeautifulSoup(html, "html.parser")
-    div = soup.find(id='offers-list')
-    olybet_promos = []
-    promo_type = promos_url.split('/')[-3]
-    for item in div.find_all('li'):
-        promo_title = item.find('span').string
-        promo_desc = None
-        promo_link = 'https://promo.olybet.com'+item.a.get('href')
-        promo_image_link = item.img.get('src')
-        promo_room = rooms['guts']
-        one_promo = (promo_title, promo_desc, promo_type, promo_link,
-                     promo_image_link, promo_room)
-        olybet_promos.append(one_promo)
-    return olybet_promos
+    room = Room_Promos('https://promo.olybet.com', html)
+    cont = room.soup.find(id='offers-list')
+    for item in cont.find_all('li'):
+        promo = Promo()
+        promo.ptype = promos_url.split('/')[-3]
+        promo.ptitle = item.find('span').string
+        promo.pdesc = None
+        promo.plink = item.a.get('href')
+        promo.pimage_link = item.img.get('src')
+        promo.clear_promo_data('olybet', room.base_url) 
+        room.add_promo(promo.one_promo)
+    return room.room_promos
 
 def scrape_pokerstars(html, rooms, promos_url):
     base_url = 'https://www.pokerstars.com'
@@ -478,7 +476,7 @@ if not testing():
                    }
 else:
     promos_urls = {
-                   guts_promos_urls: scrape_guts,
+                   olybet_promos_urls: scrape_olybet,
                    }
 print('testing: '+str(testing()))
 
