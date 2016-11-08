@@ -98,8 +98,8 @@ def get_rooms():
         return rooms
 
 class Room_Promos:
-    def __init__(self, html):
-        self.base_url = ''
+    def __init__(self, base_url, html):
+        self.base_url = base_url
         self.room_promos = []
         self.soup = BeautifulSoup(html, "html.parser")
                 
@@ -131,8 +131,7 @@ class Promo:
                           self.plink, self.pimage_link, self.proom)
         
 def scrape_betsafe(html, rooms, promos_url):
-    base_url = None
-    room = Room_Promos(html)
+    room = Room_Promos(None, html)
     cont = room.soup.find(id='ArticleGrid')
     for item in cont.find_all(id='PromotionItem'):
         promo = Promo()
@@ -143,12 +142,10 @@ def scrape_betsafe(html, rooms, promos_url):
         promo.pimage_link = item.find(id='PromotionImage').get('src')
         promo.clear_promo_data('betsafe', room.base_url) 
         room.add_promo(promo.one_promo)
-    print(room.room_promos)
     return room.room_promos
 
 def scrape_triobet(html, rooms, promos_url):
-    base_url = None
-    room = Room_Promos(html)
+    room = Room_Promos('https://www.triobet.com', html)
     cont = room.soup.find('li', class_='promotion-list')
     for item in cont.find_all('li', class_='promotion-container'):
         promo = Promo()
@@ -159,34 +156,31 @@ def scrape_triobet(html, rooms, promos_url):
         for element in promo.pdesc.find_all('br'):
             element.replace_with(" ")
         promo.pdesc = promo.pdesc.get_text()
-        promo.plink = 'https://www.triobet.com'+item.a.get('href')
+        promo.plink = item.a.get('href')
         promo.pimage_link = item.img.get('data-src')
         promo.clear_promo_data('triobet', room.base_url) 
         room.add_promo(promo.one_promo)
-    print(room.room_promos)
     return room.room_promos
 
 def scrape_guts(html, rooms, promos_url):
-    soup = BeautifulSoup(html, "html.parser")
-    div = soup.find('div', class_='promotions')
-    guts_promos = []
-    for item in div.find_all('div', class_='card'):
-        promo_type = item.a.get('href').split('/')[1]
-        promo_title = item.find('h2').get_text(strip=True)
-        promo_desc = item.find('p')
-        br_part = promo_desc.br.extract().string
-        wo_br = promo_desc.string
+    room = Room_Promos('https://www.guts.com', html)
+    cont = room.soup.find('div', class_='promotions')
+    for item in cont.find_all('div', class_='card'):
+        promo = Promo()
+        promo.ptype = item.a.get('href').split('/')[1]
+        promo.ptitle = item.find('h2').get_text(strip=True)
+        promo.pdesc = item.find('p')
+        br_part = promo.pdesc.br.extract().string
+        wo_br = promo.pdesc.string
         if br_part:
-            promo_desc = wo_br + "\n" + br_part
+            promo.pdesc = wo_br + "\n" + br_part
         else:
-            promo_desc = wo_br
-        promo_link = 'https://www.guts.com'+item.a.get('href')
-        promo_image_link = item.img.get('src')
-        promo_room = rooms['guts']
-        one_promo = (promo_title, promo_desc, promo_type, promo_link,
-                     promo_image_link, promo_room)
-        guts_promos.append(one_promo)
-    return guts_promos
+            promo.pdesc = wo_br
+        promo.plink = item.a.get('href')
+        promo.pimage_link = item.img.get('src')
+        promo.clear_promo_data('guts', room.base_url) 
+        room.add_promo(promo.one_promo)
+    return room.room_promos
 
 def scrape_olybet(html, rooms, promos_url):
     soup = BeautifulSoup(html, "html.parser")
@@ -484,7 +478,7 @@ if not testing():
                    }
 else:
     promos_urls = {
-                   betsafe_promos_urls: scrape_betsafe,
+                   guts_promos_urls: scrape_guts,
                    }
 print('testing: '+str(testing()))
 
