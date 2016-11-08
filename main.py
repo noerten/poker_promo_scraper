@@ -213,62 +213,50 @@ def scrape_pokerstars(html, rooms, promos_url):
     return room.room_promos
 
 def scrape_coral(html, rooms, promos_url):
-    base_url = 'http://www.coral.co.uk'
-    soup = BeautifulSoup(html, "html.parser")
-    section = soup.find('div', class_='bigpromotionContainer')
-    room_promos = []
-    promo_type = promos_url.split('/')[3]
-    if promo_type == 'gaming': promo_type = 'casino'
-    for item in section.find_all('div', class_='item'):
-        promo_title = item.h1.string
+    room = Room_Promos(None, html)
+    cont = room.soup.find('div', class_='bigpromotionContainer')
+    for item in cont.find_all('div', class_='item'):
+        promo = Promo()
+        promo.ptype = promos_url.split('/')[3]
+        if promo.ptype == 'gaming': promo.ptype = 'casino'
+        promo.ptitle = item.h1.string
         try:
-            promo_desc = item.p.string
+            promo.pdesc = item.p.string
         except:
-            promo_desc = None
-            print(promo_title+' has mistake in description')
-        promo_link = None
-        promo_image_link = item.img.get('src').split('?')[0]
-        promo_room = rooms['coral']
-        promo_title, promo_desc, promo_link, promo_image_link = clear_promo_data(
-            promo_title, promo_desc, promo_link, promo_image_link, base_url)
-        one_promo = (promo_title, promo_desc, promo_type, promo_link,
-                     promo_image_link, promo_room)
-        room_promos.append(one_promo)
-    return room_promos
+            print(promo.ptitle+' has mistake in description')
+        promo.pimage_link = item.img.get('src').split('?')[0]
+        promo.clear_promo_data('coral', room.base_url) 
+        room.add_promo(promo.one_promo)
+    return room.room_promos
 
 def scrape_betfred(html, rooms, promos_url):
-    base_url = 'http://www.betfred.com'
-    soup = BeautifulSoup(html, "html.parser")
-    section = soup.find(id='centerbar')
-    promo_type = promos_url.split('/')[-1].lower()
-    if not section:
-        section = soup.find('div', class_='wrapper_976')
-        promo_type = 'casino'
-    room_promos = []
-    for item in section.find_all('div', class_='promoholder'):
+    room = Room_Promos('http://www.betfred.com', html)
+    cont = room.soup.find(id='centerbar')
+    if not cont:
+        cont = room.soup.find('div', class_='wrapper_976')
+    for item in cont.find_all('div', class_='promoholder'):
+        promo = Promo()
         if len(item.get_text())<40:
             continue #to get rid of empty div's in games
-        promo_title = item.h2.string
+        promo.ptype = promos_url.split('/')[-1].lower()
+        if promo.ptype == 'promotions':
+            promo.ptype = 'casino'
+        promo.ptitle = item.h2.string
         promo_desc_p = item.find_all('p')
         promo_desc = []
         for p in promo_desc_p:
             if p.get_text().lower() != 'terms & conditions':
                 promo_desc.append(p.get_text())
-        promo_desc = '\n'.join(promo_desc)
-        promo_link = None
+        promo.pdesc = '\n'.join(promo_desc)
         if item.find_all('div', class_='button'):
             for button in item.find_all('div', class_='button'):
                 button_text = button.a.string.lower()
                 if button_text.startswith('more detail'):
-                    promo_link = button.a.get('href')
-        promo_image_link = item.img.get('src')
-        promo_room = rooms['betfred']
-        promo_title, promo_desc, promo_link, promo_image_link = clear_promo_data(
-            promo_title, promo_desc, promo_link, promo_image_link, base_url)
-        one_promo = (promo_title, promo_desc, promo_type, promo_link,
-                     promo_image_link, promo_room)
-        room_promos.append(one_promo)
-    return room_promos
+                    promo.plink = button.a.get('href')
+        promo.pimage_link = item.img.get('src')
+        promo.clear_promo_data('betfred', room.base_url) 
+        room.add_promo(promo.one_promo)
+    return room.room_promos
 
 def scrape_betfair_main(html, rooms, promos_url):
     #using html5lib coz of mistakes? on the page and html.parser doesnt find
@@ -457,6 +445,7 @@ if not testing():
                    guts_promos_urls: scrape_guts,
                    olybet_promos_urls: scrape_olybet,
                    pokerstars_promos_urls: scrape_pokerstars,
+                   coral_promos_urls: scrape_coral,
                    betfred_promos_urls: scrape_betfred,
                    betfair_main_promos_urls: scrape_betfair_main,
                    betfair_poker_promos_urls: scrape_betfair_poker,
@@ -469,7 +458,7 @@ if not testing():
                    }
 else:
     promos_urls = {
-                   pokerstars_promos_urls: scrape_pokerstars,
+                   betfred_promos_urls: scrape_betfred,
                    }
 print('testing: '+str(testing()))
 
