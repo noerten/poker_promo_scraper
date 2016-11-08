@@ -189,7 +189,6 @@ def scrape_olybet(html, rooms, promos_url):
         promo = Promo()
         promo.ptype = promos_url.split('/')[-3]
         promo.ptitle = item.find('span').string
-        promo.pdesc = None
         promo.plink = item.a.get('href')
         promo.pimage_link = item.img.get('src')
         promo.clear_promo_data('olybet', room.base_url) 
@@ -197,27 +196,21 @@ def scrape_olybet(html, rooms, promos_url):
     return room.room_promos
 
 def scrape_pokerstars(html, rooms, promos_url):
-    base_url = 'https://www.pokerstars.com'
-    soup = BeautifulSoup(html, "html.parser")
-    section = soup.find(id='portalWrap')
-    room_promos = []
-    for item in section.find_all('div', class_='promoPromotion'):
-        promo_type = item.a.get('href').split('/')[1]
-        if promo_type == 'vip':
-            promo_type = 'poker'
-        promo_title = item.find('div', class_='promoThumbText')
-        promo_title.span.extract()
-        promo_title = promo_title.get_text()
-        promo_desc = None
-        promo_link = item.a.get('href')
-        promo_image_link = item.img.get('src')
-        promo_room = rooms['pokerstars']
-        promo_title, promo_desc, promo_link, promo_image_link = clear_promo_data(
-            promo_title, promo_desc, promo_link, promo_image_link, base_url)
-        one_promo = (promo_title, promo_desc, promo_type, promo_link,
-                     promo_image_link, promo_room)
-        room_promos.append(one_promo)
-    return room_promos
+    room = Room_Promos('https://www.pokerstars.com', html)
+    cont = room.soup.find(id='portalWrap')
+    for item in cont.find_all('div', class_='promoPromotion'):
+        promo = Promo()
+        promo.ptype = item.a.get('href').split('/')[1]
+        if promo.ptype == 'vip':
+            promo.ptype = 'poker'
+        promo.ptitle = item.find('div', class_='promoThumbText')
+        promo.ptitle.span.extract()
+        promo.ptitle = promo.ptitle.get_text()
+        promo.plink = item.a.get('href')
+        promo.pimage_link = item.img.get('src')
+        promo.clear_promo_data('pokerstars', room.base_url) 
+        room.add_promo(promo.one_promo)
+    return room.room_promos
 
 def scrape_coral(html, rooms, promos_url):
     base_url = 'http://www.coral.co.uk'
@@ -476,7 +469,7 @@ if not testing():
                    }
 else:
     promos_urls = {
-                   olybet_promos_urls: scrape_olybet,
+                   pokerstars_promos_urls: scrape_pokerstars,
                    }
 print('testing: '+str(testing()))
 
