@@ -8,6 +8,55 @@ import urllib.request
 from bs4 import BeautifulSoup
 import html5lib
 
+def get_rooms():
+    conn = sqlite3.connect('pps.sqlite3')
+    with conn:
+        cur=conn.cursor()
+        cur.execute("SELECT * FROM rooms")
+        rows = cur.fetchall()
+        rooms = {}
+        if rows:
+            for row in rows:
+                rooms[row[1]] = row[0]
+        return rooms
+
+class Room_Promo:
+    rooms = get_rooms()
+    print(rooms)
+    
+    def __init__(self, html):
+        self.base_url = ''
+        self.promo_type = ''
+        self.promo_title = ''
+        self.promo_room = ''
+        self.promo_desc = None
+        self.promo_link = None
+        self.promo_image_link = None
+        self.room_promos = []
+        self.soup = BeautifulSoup(html, "html.parser")
+        self.one_promo = [self.promo_title, self.promo_desc, self.promo_type,
+                          self.promo_link, self.promo_image_link, self.promo_room]
+                
+    def set_room(self, room):
+        self.promo_room = Room_Promo.rooms[room]
+
+def scrape_betsafe(html, rooms, promos_url):
+    betsafe = Room_Promo(html)
+    betsafe.set_room('betsafe')
+    grid = betsafe.soup.find(id='ArticleGrid')
+    for item in grid.find_all(id='PromotionItem'):
+        promo_type_tag = item['class'][1]
+        betsafe.promo_type = promo_type_tag.split('Category')[0]
+        print(betsafe.promo_type)
+        betsafe.promo_title = item.find(id='PromotionTitle').string
+        betsafe.promo_desc = item.find(id='PromotionDescriptionText').string
+        betsafe.promo_link = item.a.get('href')
+        betsafe.promo_image_link = item.find(id='PromotionImage').get('src')
+        betsafe.room_promos.append(betsafe.one_promo)
+        print(betsafe.one_promo)
+    print(betsafe.room_promos)
+    sys.exit()
+    return betsafe.room_promos
 #MPN
 betsafe_promos_urls = ('https://www.betsafe.com/en/specialoffers/',)
 triobet_promos_urls = ('https://www.triobet.com/en/promotions/',)
@@ -94,22 +143,7 @@ def clear_promo_data(title, desc, link, img_link, base_url):
         img_link = base_url+img_link
     return title, desc, link, img_link
 
-def scrape_betsafe(html, rooms, promos_url):
-    soup = BeautifulSoup(html, "html.parser")
-    grid = soup.find(id='ArticleGrid')
-    betsafe_promos = []
-    for item in grid.find_all(id='PromotionItem'):
-        promo_type_tag = item['class'][1]
-        promo_type = promo_type_tag.split('Category')[0]
-        promo_title = item.find(id='PromotionTitle').string
-        promo_desc = item.find(id='PromotionDescriptionText').string
-        promo_link = item.a.get('href')
-        promo_image_link = item.find(id='PromotionImage').get('src')
-        promo_room = rooms['betsafe']
-        one_promo = (promo_title, promo_desc, promo_type, promo_link,
-                     promo_image_link, promo_room)
-        betsafe_promos.append(one_promo)
-    return betsafe_promos
+
 
 def scrape_triobet(html, rooms, promos_url):
     soup = BeautifulSoup(html, "html.parser")
@@ -447,7 +481,7 @@ if testing() == False:
                    }
 elif testing() == True:  
     promos_urls = {
-                   paddypower_casino_promos_urls: scrape_paddypower_casino,
+                   betsafe_promos_urls: scrape_betsafe,
                    }
 print('testing: '+str(testing()))
 
@@ -479,17 +513,7 @@ def create_tables():
                     DEFAULT 1, FOREIGN KEY(room_id) REFERENCES rooms(id))')
         cur.executemany("INSERT OR IGNORE INTO rooms(name) VALUES(?)", rooms)
 
-def get_rooms():
-    conn = sqlite3.connect('pps.sqlite3')
-    with conn:
-        cur=conn.cursor()
-        cur.execute("SELECT * FROM rooms")
-        rows = cur.fetchall()
-        rooms = {}
-        if rows:
-            for row in rows:
-                rooms[row[1]] = row[0]
-        return rooms
+
 
 def get_promos():
     conn = sqlite3.connect('pps.sqlite3')
