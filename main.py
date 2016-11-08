@@ -72,6 +72,7 @@ paddypower_poker_promos_urls = (
 paddypower_casino_promos_urls = (
                                  'https://casino.paddypower.com/promotions',
                                  )
+###############################################################################
 
 def get_html(url):
     try:
@@ -83,17 +84,7 @@ def get_html(url):
         return('error', error_desc)
         #raise
 
-def clear_promo_data(title, desc, link, img_link, base_url):
-    if title:
-        title = title.strip()
-    if desc:
-        desc = desc.strip()
-    if link and not (link.startswith("//") or link.startswith("http")):
-        link = base_url+link
-    if img_link and not (img_link.startswith("//") or img_link.startswith("http")):
-        img_link = base_url+img_link
-    return title, desc, link, img_link
-
+#must be before classes
 def get_rooms():
     conn = sqlite3.connect('pps.sqlite3')
     with conn:
@@ -115,35 +106,43 @@ class Room_Promos:
     def add_promo(self, promo):
         self.room_promos.append(promo)
 
-class Promo():
+class Promo:
     rooms = get_rooms()
 
     def __init__(self):
-        self.promo_type = ''
-        self.promo_title = ''
-        self.promo_desc = None
-        self.promo_link = None
-        self.promo_image_link = None
-        self.promo_room = ''
+        self.ptype = None
+        self.ptitle = None
+        self.pdesc = None
+        self.plink = None
+        self.pimage_link = None
+        self.proom = None
         
     def set_full_promo(self):
-        self.one_promo = (self.promo_title, self.promo_desc, self.promo_type,
-                          self.promo_link, self.promo_image_link, self.promo_room)
+        self.one_promo = (self.ptitle, self.pdesc, self.ptype,
+                          self.plink, self.pimage_link, self.proom)
         
-    def set_room(self, room):
+    def clear_promo_data(self, room, base_url):
         self.promo_room = Promo.rooms[room]
+        if self.ptitle:
+            self.ptitle = self.ptitle.strip()
+        if self.pdesc:
+            self.pdesc = self.pdesc.strip()
+        if self.plink and not (self.plink.startswith("//") or self.plink.startswith("http")):
+            self.plink = base_url+self.plink
+        if self.pimage_link and not (self.pimage_link.startswith("//") or self.pimage_link.startswith("http")):
+            self.pimage_link = base_url+self.pimage_link
         
 def scrape_betsafe(html, rooms, promos_url):
     room = Room_Promos(html)
     grid = room.soup.find(id='ArticleGrid')
     for item in grid.find_all(id='PromotionItem'):
         promo = Promo()
-        promo.set_room('betsafe')
-        promo.promo_type = item['class'][1].split('Category')[0]
-        promo.promo_title = item.find(id='PromotionTitle').string
-        promo.promo_desc = item.find(id='PromotionDescriptionText').string
-        promo.promo_link = item.a.get('href')
-        promo.promo_image_link = item.find(id='PromotionImage').get('src')
+        promo.ptype = item['class'][1].split('Category')[0]
+        promo.ptitle = item.find(id='PromotionTitle').string
+        promo.pdesc = item.find(id='PromotionDescriptionText').string
+        promo.plink = item.a.get('href')
+        promo.pimage_link = item.find(id='PromotionImage').get('src')
+        promo.clear_promo_data('betsafe', room.base_url) 
         promo.set_full_promo()
         room.add_promo(promo.one_promo)
     print(room.room_promos)
