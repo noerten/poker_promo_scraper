@@ -117,10 +117,6 @@ class Promo:
         self.pimage_link = None
         self.proom = None
         
-    def set_full_promo(self):
-        self.one_promo = (self.ptitle, self.pdesc, self.ptype,
-                          self.plink, self.pimage_link, self.proom)
-        
     def clear_promo_data(self, room, base_url):
         self.promo_room = Promo.rooms[room]
         if self.ptitle:
@@ -131,11 +127,14 @@ class Promo:
             self.plink = base_url+self.plink
         if self.pimage_link and not (self.pimage_link.startswith("//") or self.pimage_link.startswith("http")):
             self.pimage_link = base_url+self.pimage_link
+        self.one_promo = (self.ptitle, self.pdesc, self.ptype,
+                          self.plink, self.pimage_link, self.proom)
         
 def scrape_betsafe(html, rooms, promos_url):
+    base_url = None
     room = Room_Promos(html)
-    grid = room.soup.find(id='ArticleGrid')
-    for item in grid.find_all(id='PromotionItem'):
+    cont = room.soup.find(id='ArticleGrid')
+    for item in cont.find_all(id='PromotionItem'):
         promo = Promo()
         promo.ptype = item['class'][1].split('Category')[0]
         promo.ptitle = item.find(id='PromotionTitle').string
@@ -143,27 +142,29 @@ def scrape_betsafe(html, rooms, promos_url):
         promo.plink = item.a.get('href')
         promo.pimage_link = item.find(id='PromotionImage').get('src')
         promo.clear_promo_data('betsafe', room.base_url) 
-        promo.set_full_promo()
         room.add_promo(promo.one_promo)
     print(room.room_promos)
     return room.room_promos
 
 def scrape_triobet(html, rooms, promos_url):
-    soup = BeautifulSoup(html, "html.parser")
-    section = soup.find('li', class_='promotion-list')
-    triobet_promos = []
-    for item in section.find_all('li', class_='promotion-container'):
-        if item['class'][1] == 'odds': promo_type = 'sports'
-        else: promo_type = item['class'][1]
-        promo_title = item.find('h2').string
-        promo_desc = item.find('p').string
-        promo_link = 'https://www.triobet.com'+item.a.get('href')
-        promo_image_link = item.img.get('data-src')
-        promo_room = rooms['triobet']
-        one_promo = (promo_title, promo_desc, promo_type, promo_link,
-                     promo_image_link, promo_room)
-        triobet_promos.append(one_promo)
-    return triobet_promos
+    base_url = None
+    room = Room_Promos(html)
+    cont = room.soup.find('li', class_='promotion-list')
+    for item in cont.find_all('li', class_='promotion-container'):
+        promo = Promo()
+        if item['class'][1] == 'odds': promo.ptype = 'sports'
+        else: promo.ptype = item['class'][1]
+        promo.ptitle = item.find('h2').string
+        promo.pdesc = item.find('p')
+        for element in promo.pdesc.find_all('br'):
+            element.replace_with(" ")
+        promo.pdesc = promo.pdesc.get_text()
+        promo.plink = 'https://www.triobet.com'+item.a.get('href')
+        promo.pimage_link = item.img.get('data-src')
+        promo.clear_promo_data('triobet', room.base_url) 
+        room.add_promo(promo.one_promo)
+    print(room.room_promos)
+    return room.room_promos
 
 def scrape_guts(html, rooms, promos_url):
     soup = BeautifulSoup(html, "html.parser")
@@ -478,9 +479,8 @@ if not testing():
                    mansion_promos_urls: scrape_mansion,
                    netbet_sports_promos_urls: scrape_netbet_sports,
                    netbet_poker_promos_urls: scrape_netbet_poker,
-                   netbet_casino_promos_urls: scrape_netbet_casino,#doent work
+                   netbet_casino_promos_urls: scrape_netbet_casino,#doesnt work
                    paddypower_poker_promos_urls: scrape_paddypower_poker,
-                   
                    }
 else:
     promos_urls = {
@@ -515,8 +515,6 @@ def create_tables():
                     room_id INTEGER NOT NULL, is_active INTEGER\
                     DEFAULT 1, FOREIGN KEY(room_id) REFERENCES rooms(id))')
         cur.executemany("INSERT OR IGNORE INTO rooms(name) VALUES(?)", rooms)
-
-
 
 def get_promos():
     conn = sqlite3.connect('pps.sqlite3')
