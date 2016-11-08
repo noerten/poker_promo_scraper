@@ -385,7 +385,7 @@ def scrape_paddypower_casino(html, rooms, promos_url):
 
 def testing():
     a = (True, False)
-    return a[0]
+    return a[1]
 
 if not testing():  
     promos_urls = {
