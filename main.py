@@ -8,55 +8,6 @@ import urllib.request
 from bs4 import BeautifulSoup
 import html5lib
 
-def get_rooms():
-    conn = sqlite3.connect('pps.sqlite3')
-    with conn:
-        cur=conn.cursor()
-        cur.execute("SELECT * FROM rooms")
-        rows = cur.fetchall()
-        rooms = {}
-        if rows:
-            for row in rows:
-                rooms[row[1]] = row[0]
-        return rooms
-
-class Room_Promo:
-    rooms = get_rooms()
-    print(rooms)
-    
-    def __init__(self, html):
-        self.base_url = ''
-        self.promo_type = ''
-        self.promo_title = ''
-        self.promo_room = ''
-        self.promo_desc = None
-        self.promo_link = None
-        self.promo_image_link = None
-        self.room_promos = []
-        self.soup = BeautifulSoup(html, "html.parser")
-        self.one_promo = [self.promo_title, self.promo_desc, self.promo_type,
-                          self.promo_link, self.promo_image_link, self.promo_room]
-                
-    def set_room(self, room):
-        self.promo_room = Room_Promo.rooms[room]
-
-def scrape_betsafe(html, rooms, promos_url):
-    betsafe = Room_Promo(html)
-    betsafe.set_room('betsafe')
-    grid = betsafe.soup.find(id='ArticleGrid')
-    for item in grid.find_all(id='PromotionItem'):
-        promo_type_tag = item['class'][1]
-        betsafe.promo_type = promo_type_tag.split('Category')[0]
-        print(betsafe.promo_type)
-        betsafe.promo_title = item.find(id='PromotionTitle').string
-        betsafe.promo_desc = item.find(id='PromotionDescriptionText').string
-        betsafe.promo_link = item.a.get('href')
-        betsafe.promo_image_link = item.find(id='PromotionImage').get('src')
-        betsafe.room_promos.append(betsafe.one_promo)
-        print(betsafe.one_promo)
-    print(betsafe.room_promos)
-    sys.exit()
-    return betsafe.room_promos
 #MPN
 betsafe_promos_urls = ('https://www.betsafe.com/en/specialoffers/',)
 triobet_promos_urls = ('https://www.triobet.com/en/promotions/',)
@@ -134,16 +85,69 @@ def get_html(url):
 
 def clear_promo_data(title, desc, link, img_link, base_url):
     if title:
-        title = title.strip(' \r\n\t')
+        title = title.strip()
     if desc:
-        desc = desc.strip(' \r\n\t')
+        desc = desc.strip()
     if link and not (link.startswith("//") or link.startswith("http")):
         link = base_url+link
     if img_link and not (img_link.startswith("//") or img_link.startswith("http")):
         img_link = base_url+img_link
     return title, desc, link, img_link
 
+def get_rooms():
+    conn = sqlite3.connect('pps.sqlite3')
+    with conn:
+        cur=conn.cursor()
+        cur.execute("SELECT * FROM rooms")
+        rows = cur.fetchall()
+        rooms = {}
+        if rows:
+            for row in rows:
+                rooms[row[1]] = row[0]
+        return rooms
 
+class Room_Promos:
+    def __init__(self, html):
+        self.base_url = ''
+        self.room_promos = []
+        self.soup = BeautifulSoup(html, "html.parser")
+                
+    def add_promo(self, promo):
+        self.room_promos.append(promo)
+
+class Promo():
+    rooms = get_rooms()
+
+    def __init__(self):
+        self.promo_type = ''
+        self.promo_title = ''
+        self.promo_desc = None
+        self.promo_link = None
+        self.promo_image_link = None
+        self.promo_room = ''
+        
+    def set_full_promo(self):
+        self.one_promo = (self.promo_title, self.promo_desc, self.promo_type,
+                          self.promo_link, self.promo_image_link, self.promo_room)
+        
+    def set_room(self, room):
+        self.promo_room = Promo.rooms[room]
+        
+def scrape_betsafe(html, rooms, promos_url):
+    room = Room_Promos(html)
+    grid = room.soup.find(id='ArticleGrid')
+    for item in grid.find_all(id='PromotionItem'):
+        promo = Promo()
+        promo.set_room('betsafe')
+        promo.promo_type = item['class'][1].split('Category')[0]
+        promo.promo_title = item.find(id='PromotionTitle').string
+        promo.promo_desc = item.find(id='PromotionDescriptionText').string
+        promo.promo_link = item.a.get('href')
+        promo.promo_image_link = item.find(id='PromotionImage').get('src')
+        promo.set_full_promo()
+        room.add_promo(promo.one_promo)
+    print(room.room_promos)
+    return room.room_promos
 
 def scrape_triobet(html, rooms, promos_url):
     soup = BeautifulSoup(html, "html.parser")
@@ -461,7 +465,7 @@ def testing():
     a = (True, False)
     return a[0]
 
-if testing() == False:  
+if not testing():  
     promos_urls = {
                    betsafe_promos_urls: scrape_betsafe,
                    triobet_promos_urls: scrape_triobet,
@@ -479,7 +483,7 @@ if testing() == False:
                    paddypower_poker_promos_urls: scrape_paddypower_poker,
                    
                    }
-elif testing() == True:  
+else:
     promos_urls = {
                    betsafe_promos_urls: scrape_betsafe,
                    }
