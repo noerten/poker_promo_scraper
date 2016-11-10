@@ -8,70 +8,64 @@ import urllib.request
 from bs4 import BeautifulSoup
 import html5lib
 
-#MPN
-betsafe_promos_urls = ('https://www.betsafe.com/en/specialoffers/',)
-triobet_promos_urls = ('https://www.triobet.com/en/promotions/',)
-#despite 'poker' in guts' url, there are all promos
-guts_promos_urls = ('https://www.guts.com/en/poker/promotions/',)
-olybet_promos_urls = ('https://promo.olybet.com/com/sports/promotions/',
-                      'https://promo.olybet.com/com/casino/promotions/',
-                      'https://promo.olybet.com/com/poker/promotions/',
-                      )
-#pokerstars
-pokerstars_promos_urls = ('https://www.pokerstars.com/poker/promotions/',)
 #ipoker
-betfred_promos_urls = (
-                       'http://www.betfred.com/promotions/Sports',
-                       'http://www.betfred.com/promotions/Casino',
-                       'http://www.betfred.com/promotions/Lottery',
-                       'http://www.betfred.com/promotions/Poker',
-                       'http://www.betfred.com/promotions/Virtual',
-                       'http://www.betfred.com/promotions/Bingo',
-                       'http://www.betfred.com/games/promotions',
-                       )
-coral_promos_urls = ('http://www.coral.co.uk/lotto/offers/',
-                     'http://www.coral.co.uk/poker/offers/',
-                     'http://www.coral.co.uk/poker/tournaments/',
-                     'http://www.coral.co.uk/gaming/promotions/',
-                     'http://www.coral.co.uk/sports/offers/',
-#uncommented doesnt work coz renders on client?                     
-#                     'http://www.coral.co.uk/bingo/promotions/',
-                     )
+#bet365 only poker
+bet365_poker_promos_urls = ('http://poker.bet365.com/promotions/en',)
 betfair_main_promos_urls = ('https://promos.betfair.com/sport',
                             'https://promos.betfair.com/arcade',
                             'https://promos.betfair.com/macau',
 #uncommented coz diff structure and show only first dep bonuses
 #                           'https://casino.betfair.com/promotions',
-#uncommented coz diff structure and i dont use bingo promos
+#uncommented coz diff structure
 #                           'https://bingo.betfair.com/promotions',
+                            )
+betfair_poker_promos_urls = ('https://poker.betfair.com/promotions',)
+betfred_promos_urls = ('http://www.betfred.com/promotions/Sports',
+                       'http://www.betfred.com/promotions/Casino',
+                       'http://www.betfred.com/promotions/Lottery',
+                       'http://www.betfred.com/promotions/Poker',
+                       'http://www.betfred.com/promotions/Virtual',
+                       'http://www.betfred.com/promotions/Bingo',
+                       'http://www.betfred.com/games/promotions',)
+coral_promos_urls = ('http://www.coral.co.uk/lotto/offers/',
+                     'http://www.coral.co.uk/poker/offers/',
+                     'http://www.coral.co.uk/poker/tournaments/',
+                     'http://www.coral.co.uk/gaming/promotions/',
+                     'http://www.coral.co.uk/sports/offers/',
+#uncommented doesnt work coz renders on client? found api, to add                    
+#                     'http://www.coral.co.uk/bingo/promotions/',
                      )
-betfair_poker_promos_urls = (
-                             'https://poker.betfair.com/promotions',
-                             )
 #didnt add casino
-mansion_promos_urls = (
-                       'http://www.mansionpoker.com/promotions',
-                       )
-
-netbet_sports_promos_urls = (
-                      'https://sportapi-sb.netbet.com/promotions',
-                      )
-netbet_poker_promos_urls = (
-                      'https://poker.netbet.com/eu/promotions',
-                      )
+mansion_promos_urls = ('http://www.mansionpoker.com/promotions',)
 ##didnt added casino coz didnt find api
 netbet_casino_promos_urls = (
                       'https://casino.netbet.com/eu/promotions-en',
                       'https://vegas.netbet.com/en/promotion',
                       )
-paddypower_poker_promos_urls = (
-                          'https://api.paddypower.com/promotions/1.0/promotions/?channel=poker&category=324',
-#                         'http://www.paddypower.com/bet/money-back-specials',
-                       )
+netbet_poker_promos_urls = (
+                      'https://poker.netbet.com/eu/promotions',
+                      )
+netbet_sports_promos_urls = (
+                      'https://sportapi-sb.netbet.com/promotions',
+                      )
 #didnt add sport and games
 paddypower_casino_promos_urls = (
                                  'https://casino.paddypower.com/promotions',
                                  )
+paddypower_poker_promos_urls = (
+                          'https://api.paddypower.com/promotions/1.0/promotions/?channel=poker&category=324',
+#                         'http://www.paddypower.com/bet/money-back-specials',
+                       )
+#MPN
+betsafe_promos_urls = ('https://www.betsafe.com/en/specialoffers/',)
+#despite 'poker' in guts' url, there are all promos
+guts_promos_urls = ('https://www.guts.com/en/poker/promotions/',)
+olybet_promos_urls = ('https://promo.olybet.com/com/sports/promotions/',
+                      'https://promo.olybet.com/com/casino/promotions/',
+                      'https://promo.olybet.com/com/poker/promotions/',)
+triobet_promos_urls = ('https://www.triobet.com/en/promotions/',)
+#pokerstars
+pokerstars_promos_urls = ('https://www.pokerstars.com/poker/promotions/',)
 ###############################################################################
 
 def get_html(url):
@@ -364,24 +358,47 @@ def scrape_paddypower_poker(html, rooms, promos_url):
 def scrape_paddypower_casino(html, rooms, promos_url):
     room = Room_Promos(promos_url.rsplit('/', 2)[0], html)    
     cont = room.soup.find(id="content_frame")
-    print(cont)
-    for item in container.find_all('div', class_='promotion-list-item'):
-        promo_link = item.a.get('href')
-        promo_html = get_html(promo_link)
+    for item in cont.find_all('div', class_='promotion-list-item'):
+        promo = Promo()
+        promo.ptype = 'casino'
+        promo.plink = item.a.get('href')
+        promo_html = get_html(promo.plink)
         promo_soup = BeautifulSoup(promo_html, "html.parser")
         inner_cont = promo_soup.find(id='content_frame').find('div', class_='promotion_details')
-        promo_title = inner_cont.h2.string
+        promo.ptitle = inner_cont.h2.string
+        ptag = None
         for tag in inner_cont.find_all(True):
-            tag.replaceWith('')    
-        promo_desc = inner_cont.get_text()
-        promo_image_link = item.img.get('src')
-        promo_room = rooms['paddypower']
-        promo_title, promo_desc, promo_link, promo_image_link = clear_promo_data(
-            promo_title, promo_desc, promo_link, promo_image_link, base_url)
-        one_promo = (promo_title, promo_desc, promo_type, promo_link,
-                     promo_image_link, promo_room)
-        room_promos.append(one_promo)
-    return room_promos
+            ptag = inner_cont.find('p')
+            if ptag:
+                break
+            tag.replaceWith('')
+        if not ptag:
+            promo.pdesc = inner_cont.get_text()
+        else:
+            promo.pdesc = ptag.string
+        promo.pimage_link = item.img.get('src')
+        promo.clear_promo_data('paddypower', room.base_url) 
+        room.add_promo(promo.one_promo)
+    return room.room_promos
+
+def scrape_bet365_poker(html, rooms, promos_url):
+    base_url = None
+    room = Room_Promos(base_url, html)    
+    cont = room.soup.find(id="LinksContainer")
+    for item in cont.find_all(id='ListElement'):
+        promo = Promo()
+        promo.ptype = promos_url.split('.')[0].split('/')[-1].lower()
+        promo.ptitle = item.find('div', class_='infoTextContainer').get_text()
+        promo.plink = item.a.get('href')
+        promo_html = get_html(promo.plink)
+        promo_soup = BeautifulSoup(promo_html, "html.parser")
+        inner_cont = promo_soup.find('div', class_='RightColumn').find('p', class_='infoTextContainer ')
+        promo.pdesc = inner_cont.get_text()
+        promo_image_cont = item.find('div', class_='SubNavLinkImage')['style']
+        promo.pimage_link = re.findall("\('(.*?)'\)", promo_image_cont)[0]
+        promo.clear_promo_data('bet365', room.base_url) 
+        room.add_promo(promo.one_promo)
+    return room.room_promos
 
 def testing():
     a = (True, False)
@@ -402,10 +419,11 @@ if not testing():
                    netbet_sports_promos_urls: scrape_netbet_sports,
                    netbet_poker_promos_urls: scrape_netbet_poker,
                    paddypower_poker_promos_urls: scrape_paddypower_poker,
+                   paddypower_casino_promos_urls: scrape_paddypower_casino,
+                   bet365_poker_promos_urls: scrape_bet365_poker,
                    }
 else:
     promos_urls = {
-                   paddypower_casino_promos_urls: scrape_paddypower_casino,
                    }
 print('testing: '+str(testing()))
 
@@ -421,7 +439,8 @@ def create_tables():
         ("coral",),
         ("mansion",),
         ("netbet",),
-        ("paddypower",),        
+        ("paddypower",),
+        ("bet365",),
         )
     conn = sqlite3.connect('pps.sqlite3')
     with conn:
@@ -492,7 +511,6 @@ def compare_promos(base_promos, scraped_promos):
     for i in base_promos:
         if i not in scraped_promos_wo_image:
             inactive_promos.append(i)
-#    print(inactive_promos)
 #new promos with image, inactive without
     return [new_promos, inactive_promos]
 
