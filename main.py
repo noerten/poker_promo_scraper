@@ -27,6 +27,8 @@ betfred_promos_urls = ('http://www.betfred.com/promotions/Sports',
                        'http://www.betfred.com/promotions/Virtual',
                        'http://www.betfred.com/promotions/Bingo',
                        'http://www.betfred.com/games/promotions',)
+boyle_poker_promos_urls = ('http://poker.boylesports.com/promotions',
+                           'http://poker.boylesports.com/tournaments',)
 coral_promos_urls = ('http://www.coral.co.uk/lotto/offers/',
                      'http://www.coral.co.uk/poker/offers/',
                      'http://www.coral.co.uk/poker/tournaments/',
@@ -400,6 +402,21 @@ def scrape_bet365_poker(html, rooms, promos_url):
         room.add_promo(promo.one_promo)
     return room.room_promos
 
+def scrape_boyle_poker(html, rooms, promos_url):
+    base_url = 'http://poker.boylesports.com'
+    room = Room_Promos(base_url, html)    
+    cont = room.soup.find(id="promo-box-wrapper")
+    for item in cont.find_all('div', class_='promo-box-li'):
+        promo = Promo()
+        promo.ptype = promos_url.split('.')[0].split('/')[-1].lower()
+        promo.ptitle = item.find('div', class_='promo-box-li-title').span.get_text()
+        promo.plink = item.a.get('href')
+        promo.pdesc = item.find('div', class_='promo-box-li-content-txt').get_text()
+        promo.pimage_link = item.img.get('src')
+        promo.clear_promo_data('boyle', room.base_url) 
+        room.add_promo(promo.one_promo)
+    return room.room_promos
+
 def testing():
     a = (True, False)
     return a[1]
@@ -421,9 +438,11 @@ if not testing():
                    paddypower_poker_promos_urls: scrape_paddypower_poker,
                    paddypower_casino_promos_urls: scrape_paddypower_casino,
                    bet365_poker_promos_urls: scrape_bet365_poker,
+                   boyle_poker_promos_urls: scrape_boyle_poker,
                    }
 else:
     promos_urls = {
+                   boyle_poker_promos_urls: scrape_boyle_poker,
                    }
 print('testing: '+str(testing()))
 
@@ -441,6 +460,7 @@ def create_tables():
         ("netbet",),
         ("paddypower",),
         ("bet365",),
+        ("boyle",),
         )
     conn = sqlite3.connect('pps.sqlite3')
     with conn:
