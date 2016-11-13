@@ -74,6 +74,7 @@ winner_poker_promos_urls = (
                             )
 
 #MPN
+_32red_poker_promos_urls = ('http://32redpoker.com/promotions/all-promotions-at-32red-poker.html',)
 betsafe_promos_urls = ('https://www.betsafe.com/en/specialoffers/',)
 #despite 'poker' in guts' url, there are all promos
 guts_promos_urls = ('https://www.guts.com/en/poker/promotions/',)
@@ -503,10 +504,28 @@ def scrape_winner_poker(html, rooms, promos_url):
         room.add_promo(promo.one_promo)
     return room.room_promos
 
+def scrape_32red_poker(html, rooms, promos_url):
+    base_url = promos_url.rsplit('/', 2)[0]
+    room = Room_Promos(base_url, html)    
+    cont = room.soup.find('div', id='content')
+    for item in cont.find_all('div', class_='promoBox'):
+        promo = Promo()
+        promo.ptitle = item.find('h3').get_text()
+        promo.plink = item.a.get('href')
+        promo.ptype = 'poker'
+        pdesc1 = item.find('h4').get_text()
+        pdesc2 = item.find('p').get_text()
+        promo.pdesc = pdesc1 + '\n' + pdesc2
+        promo.pimage_link = item.img.get('src')
+        promo.clear_promo_data('32red', room.base_url) 
+        room.add_promo(promo.one_promo)
+    return room.room_promos
+
+
 #####################################
 def testing():
     a = (True, False)
-    return a[0]
+    return a[1]
 #####################################
 if not testing():  
     promos_urls = {
@@ -530,10 +549,11 @@ if not testing():
                    titan_promos_urls: scrape_titan,
                    william_hill_poker_promos_urls: scrape_william_hill_poker,
                    winner_poker_promos_urls: scrape_winner_poker,
+                   _32red_poker_promos_urls: scrape_32red_poker,
                    }
 else:
     promos_urls = {
-                   winner_poker_promos_urls: scrape_winner_poker,
+                   _32red_poker_promos_urls: scrape_32red_poker,
                    }
 print('testing: '+str(testing()))
 
@@ -633,6 +653,10 @@ def compare_promos(base_promos, scraped_promos):
 def print_tv(a):
     print('type: '+str(type(a)))
     print(a)
+
+def print_exit(a):
+    print(a)
+    sys.exit()
     
 def main():
     scraped_promos = []
