@@ -37,6 +37,10 @@ coral_promos_urls = ('http://www.coral.co.uk/lotto/offers/',
 #uncommented doesnt work coz renders on client? found api, to add                    
 #                     'http://www.coral.co.uk/bingo/promotions/',
                      )
+iron_promos_urls = (
+                          'http://www.ironbet.com/promotions',
+                          'http://www.ironpoker.com/promotions',
+                          )
 #didnt add casino
 mansion_promos_urls = ('http://www.mansionpoker.com/promotions',)
 ##didnt added casino coz didnt find api
@@ -417,6 +421,27 @@ def scrape_boyle_poker(html, rooms, promos_url):
         room.add_promo(promo.one_promo)
     return room.room_promos
 
+def scrape_iron(html, rooms, promos_url):
+    base_url = promos_url.rsplit('/', 1)[0]
+    room = Room_Promos(base_url, html)    
+    cont = room.soup.find('div', class_='contWrapper')
+    for item in cont.find_all('div', class_='promo_box'):
+        promo = Promo()
+        promo.plink = item.a.get('href')
+        if base_url == 'http://www.ironpoker.com':
+            promo.ptype = 'poker'
+        else:
+            if not 'casino' in promo.plink:
+                promo.ptype = 'sports'
+            else:
+                promo.ptype = 'casino'
+        promo.ptitle = item.find('a', class_='teaser_title').get_text()
+        promo.pdesc = item.find('a', class_='promo_text').get_text()
+        promo.pimage_link = item.img.get('src')
+        promo.clear_promo_data('boyle', room.base_url) 
+        room.add_promo(promo.one_promo)
+    return room.room_promos
+
 def testing():
     a = (True, False)
     return a[1]
@@ -439,10 +464,11 @@ if not testing():
                    paddypower_casino_promos_urls: scrape_paddypower_casino,
                    bet365_poker_promos_urls: scrape_bet365_poker,
                    boyle_poker_promos_urls: scrape_boyle_poker,
+                   iron_promos_urls: scrape_iron,
                    }
 else:
     promos_urls = {
-                   boyle_poker_promos_urls: scrape_boyle_poker,
+                   iron_poker_promos_urls: scrape_iron_poker,
                    }
 print('testing: '+str(testing()))
 
@@ -461,6 +487,7 @@ def create_tables():
         ("paddypower",),
         ("bet365",),
         ("boyle",),
+        ("iron",),
         )
     conn = sqlite3.connect('pps.sqlite3')
     with conn:
