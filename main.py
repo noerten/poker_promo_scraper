@@ -38,9 +38,9 @@ coral_promos_urls = ('http://www.coral.co.uk/lotto/offers/',
 #                     'http://www.coral.co.uk/bingo/promotions/',
                      )
 iron_promos_urls = (
-                          'http://www.ironbet.com/promotions',
-                          'http://www.ironpoker.com/promotions',
-                          )
+                    'http://www.ironbet.com/promotions',
+                    'http://www.ironpoker.com/promotions',
+                    )
 #didnt add casino
 mansion_promos_urls = ('http://www.mansionpoker.com/promotions',)
 ##didnt added casino coz didnt find api
@@ -62,6 +62,10 @@ paddypower_poker_promos_urls = (
                           'https://api.paddypower.com/promotions/1.0/promotions/?channel=poker&category=324',
 #                         'http://www.paddypower.com/bet/money-back-specials',
                        )
+titan_promos_urls = (
+                     #'http://www.titanbet.com/promotions',
+                     'http://www.titanpoker.com/promotions',
+                     )
 #MPN
 betsafe_promos_urls = ('https://www.betsafe.com/en/specialoffers/',)
 #despite 'poker' in guts' url, there are all promos
@@ -442,10 +446,25 @@ def scrape_iron(html, rooms, promos_url):
         room.add_promo(promo.one_promo)
     return room.room_promos
 
+def scrape_titan(html, rooms, promos_url):
+    base_url = promos_url.rsplit('/', 1)[0]
+    room = Room_Promos(base_url, html)    
+    cont = room.soup.find('div', class_='rounded_content').find_all('div', class_='grid_9', recursive=False)[-1]
+    for item in cont.find_all('div', class_='promos'):
+        promo = Promo()
+        promo.plink = item.a.get('href')
+        promo.ptype = 'poker'
+        promo.ptitle = item.h3.p.string
+        promo.pdesc = item.find('p', recursive=False).get_text()
+        promo.pimage_link = item.img.get('src')
+        promo.clear_promo_data('boyle', room.base_url) 
+        room.add_promo(promo.one_promo)
+    return room.room_promos
+#####################################
 def testing():
     a = (True, False)
     return a[1]
-
+#####################################
 if not testing():  
     promos_urls = {
                    betsafe_promos_urls: scrape_betsafe,
@@ -465,10 +484,11 @@ if not testing():
                    bet365_poker_promos_urls: scrape_bet365_poker,
                    boyle_poker_promos_urls: scrape_boyle_poker,
                    iron_promos_urls: scrape_iron,
+                   titan_promos_urls: scrape_titan,
                    }
 else:
     promos_urls = {
-                   iron_poker_promos_urls: scrape_iron_poker,
+                   titan_promos_urls: scrape_titan,
                    }
 print('testing: '+str(testing()))
 
@@ -488,6 +508,7 @@ def create_tables():
         ("bet365",),
         ("boyle",),
         ("iron",),
+        ("titan",),
         )
     conn = sqlite3.connect('pps.sqlite3')
     with conn:
