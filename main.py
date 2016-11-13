@@ -66,6 +66,13 @@ titan_promos_urls = (
                      #'http://www.titanbet.com/promotions',
                      'http://www.titanpoker.com/promotions',
                      )
+william_hill_poker_promos_urls = (
+                                  'http://poker.williamhill.com/promotions',
+                                  )
+winner_poker_promos_urls = (
+                            'http://poker.winner.com/promotions',
+                            )
+
 #MPN
 betsafe_promos_urls = ('https://www.betsafe.com/en/specialoffers/',)
 #despite 'poker' in guts' url, there are all promos
@@ -74,6 +81,7 @@ olybet_promos_urls = ('https://promo.olybet.com/com/sports/promotions/',
                       'https://promo.olybet.com/com/casino/promotions/',
                       'https://promo.olybet.com/com/poker/promotions/',)
 triobet_promos_urls = ('https://www.triobet.com/en/promotions/',)
+
 #pokerstars
 pokerstars_promos_urls = ('https://www.pokerstars.com/poker/promotions/',)
 ###############################################################################
@@ -442,7 +450,7 @@ def scrape_iron(html, rooms, promos_url):
         promo.ptitle = item.find('a', class_='teaser_title').get_text()
         promo.pdesc = item.find('a', class_='promo_text').get_text()
         promo.pimage_link = item.img.get('src')
-        promo.clear_promo_data('boyle', room.base_url) 
+        promo.clear_promo_data('iron', room.base_url) 
         room.add_promo(promo.one_promo)
     return room.room_promos
 
@@ -457,13 +465,48 @@ def scrape_titan(html, rooms, promos_url):
         promo.ptitle = item.h3.p.string
         promo.pdesc = item.find('p', recursive=False).get_text()
         promo.pimage_link = item.img.get('src')
-        promo.clear_promo_data('boyle', room.base_url) 
+        promo.clear_promo_data('titan', room.base_url) 
         room.add_promo(promo.one_promo)
     return room.room_promos
+
+def scrape_william_hill_poker(html, rooms, promos_url):
+    base_url = promos_url.rsplit('/', 1)[0]
+    room = Room_Promos(base_url, html)    
+    cont = room.soup.find('div', id='pokerGrid')
+    for item in cont.find_all('div', class_='pokerTourBoxHolder'):
+        promo = Promo()
+        promo.plink = item.a.get('href')
+        if promo.plink and not (promo.plink.startswith("//") or promo.plink.startswith("http")):
+            promo.plink = base_url+promo.plink
+        promo.ptype = 'poker'
+        promo.pdesc = item.find(class_='detailsWrapper').p.get_text()
+        promo.pimage_link = item.img.get('src')
+        promo_html = get_html(promo.plink)
+        promo_soup = BeautifulSoup(promo_html, "html.parser")
+        promo.ptitle = promo_soup.find(id='pokerTitleUnder').h1.string
+        promo.clear_promo_data('william_hill', room.base_url) 
+        room.add_promo(promo.one_promo)
+    return room.room_promos
+
+def scrape_winner_poker(html, rooms, promos_url):
+    base_url = promos_url.rsplit('/', 1)[0]
+    room = Room_Promos(base_url, html)    
+    cont = room.soup.find('div', id='wnr_p_content')
+    for item in cont.find_all('div', class_='promo'):
+        promo = Promo()
+        promo.ptitle = item.find('div', class_='txt').h4.string
+        promo.plink = item.a.get('href')
+        promo.ptype = 'poker'
+        promo.pdesc = item.find('div', class_='txt').p.get_text()
+        promo.pimage_link = item.img.get('src')
+        promo.clear_promo_data('winner', room.base_url) 
+        room.add_promo(promo.one_promo)
+    return room.room_promos
+
 #####################################
 def testing():
     a = (True, False)
-    return a[1]
+    return a[0]
 #####################################
 if not testing():  
     promos_urls = {
@@ -485,10 +528,12 @@ if not testing():
                    boyle_poker_promos_urls: scrape_boyle_poker,
                    iron_promos_urls: scrape_iron,
                    titan_promos_urls: scrape_titan,
+                   william_hill_poker_promos_urls: scrape_william_hill_poker,
+                   winner_poker_promos_urls: scrape_winner_poker,
                    }
 else:
     promos_urls = {
-                   titan_promos_urls: scrape_titan,
+                   winner_poker_promos_urls: scrape_winner_poker,
                    }
 print('testing: '+str(testing()))
 
@@ -509,6 +554,9 @@ def create_tables():
         ("boyle",),
         ("iron",),
         ("titan",),
+        ("william_hill",),
+        ("winner",),
+        ("32red",),
         )
     conn = sqlite3.connect('pps.sqlite3')
     with conn:
