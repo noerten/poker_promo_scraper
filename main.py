@@ -76,6 +76,7 @@ winner_poker_promos_urls = (
 #MPN
 _32red_poker_promos_urls = ('http://32redpoker.com/promotions/all-promotions-at-32red-poker.html',)
 betsafe_promos_urls = ('https://www.betsafe.com/en/specialoffers/',)
+betvictor_poker_promos_urls = ('http://www.betvictor.com/poker/en/content/promotions',)
 #despite 'poker' in guts' url, there are all promos
 guts_promos_urls = ('https://www.guts.com/en/poker/promotions/',)
 olybet_promos_urls = ('https://promo.olybet.com/com/sports/promotions/',
@@ -85,6 +86,10 @@ triobet_promos_urls = ('https://www.triobet.com/en/promotions/',)
 
 #pokerstars
 pokerstars_promos_urls = ('https://www.pokerstars.com/poker/promotions/',)
+
+#888
+_888_promos_urls = ('https://www.888poker.com/poker-promotions',)
+
 ###############################################################################
 
 def get_html(url):
@@ -132,10 +137,11 @@ class Promo:
         
     def clear_promo_data(self, room, base_url):
         self.proom = Promo.rooms[room]
+        a = ' -\r\n\t\xa0'
         if self.ptitle:
-            self.ptitle = self.ptitle.strip()
+            self.ptitle = self.ptitle.strip(a)
         if self.pdesc:
-            self.pdesc = self.pdesc.strip()
+            self.pdesc = self.pdesc.strip(a)
         if self.plink and not (self.plink.startswith("//") or self.plink.startswith("http")):
             self.plink = base_url+self.plink
         if self.pimage_link and not (self.pimage_link.startswith("//") or self.pimage_link.startswith("http")):
@@ -521,6 +527,65 @@ def scrape_32red_poker(html, rooms, promos_url):
         room.add_promo(promo.one_promo)
     return room.room_promos
 
+def scrape_32red_poker(html, rooms, promos_url):
+    base_url = promos_url.rsplit('/', 2)[0]
+    room = Room_Promos(base_url, html)    
+    cont = room.soup.find('div', id='content')
+    for item in cont.find_all('div', class_='promoBox'):
+        promo = Promo()
+        promo.ptitle = item.find('h3').get_text()
+        promo.plink = item.a.get('href')
+        promo.ptype = 'poker'
+        pdesc1 = item.find('h4').get_text()
+        pdesc2 = item.find('p').get_text()
+        promo.pdesc = pdesc1 + '\n' + pdesc2
+        promo.pimage_link = item.img.get('src')
+        promo.clear_promo_data('32red', room.base_url) 
+        room.add_promo(promo.one_promo)
+    return room.room_promos
+
+def scrape_betvictor_poker(html, rooms, promos_url):
+    base_url = promos_url.rsplit('/', 4)[0]
+    room = Room_Promos(base_url, html)    
+    cont = room.soup.find('div', class_='page_content')
+    for item in cont.find_all('table'):
+        promo = Promo()
+        main_td = item.find_all('td')[-1]
+        promo.ptitle = main_td.find('strong').get_text()
+        promo.plink = main_td.a.get('href')
+        promo.ptype = 'poker'
+        main_td.strong.replaceWith('')
+        promo.pdesc = main_td.get_text()
+        promo.pimage_link = item.img.get('src')
+        promo.clear_promo_data('betvictor', room.base_url) 
+        room.add_promo(promo.one_promo)
+    return room.room_promos
+
+def scrape_888(html, rooms, promos_url):
+    base_url = promos_url.rsplit('/', 1)[0]
+    room = Room_Promos(base_url, html)    
+    cont = room.soup.find('div', id='main-content-wrapper')
+    for outer_item in cont.find_all('div', class_='lobby-list-tab'):
+        for item in outer_item.ul.find_all('li', recursive=False):
+            promo = Promo()
+            if 'lobby-show-tab-0' in outer_item['class']:
+                continue
+            elif 'lobby-show-tab-1' in outer_item['class']:
+                promo.ptype = 'poker'
+            elif 'lobby-show-tab-2' in outer_item['class']:
+                promo.ptype = 'casino'
+            elif 'lobby-show-tab-3' in outer_item['class']:
+                promo.ptype = 'sports'
+            else:
+                raise NameError('something wrong with 888 promo types')
+            promo.ptitle = item.find('span', class_='table-cell').get_text()
+            promo.plink = item.a.get('href')
+            promo.pdesc = item.find('span', class_='item-description').get_text()
+            promo.pimage_link = item.img.get('data-original')
+            promo.clear_promo_data('888', room.base_url) 
+            room.add_promo(promo.one_promo)
+    return room.room_promos
+
 
 #####################################
 def testing():
@@ -550,10 +615,12 @@ if not testing():
                    william_hill_poker_promos_urls: scrape_william_hill_poker,
                    winner_poker_promos_urls: scrape_winner_poker,
                    _32red_poker_promos_urls: scrape_32red_poker,
+                   betvictor_poker_promos_urls: scrape_betvictor_poker,
+                   _888_promos_urls: scrape_888,
                    }
 else:
     promos_urls = {
-                   _32red_poker_promos_urls: scrape_32red_poker,
+                   _888_promos_urls: scrape_888,
                    }
 print('testing: '+str(testing()))
 
@@ -577,6 +644,8 @@ def create_tables():
         ("william_hill",),
         ("winner",),
         ("32red",),
+        ("betvictor",),
+        ("888",),
         )
     conn = sqlite3.connect('pps.sqlite3')
     with conn:
