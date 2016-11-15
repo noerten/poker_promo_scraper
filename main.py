@@ -110,7 +110,7 @@ def get_html(url):
         error_desc = 'HTTP Error %s: %s at URL %s' % (err.code, err.msg, url)
         return('error', error_desc)
     except urllib.error.URLError as err:
-        error_desc = 'URL Error %s: %s at URL %s' % (err.reason, url)
+        error_desc = 'URL Error: %s at URL %s' % (err.reason, url)
         return('error', error_desc)
 
 #must be before classes
@@ -614,7 +614,6 @@ def scrape_tonybet_poker(html, rooms, promos_url):
 
 def scrape_party_poker(html, rooms, promos_url):
     base_url = promos_url.rsplit('/', 2)[0]
-    print_exit(base_url)
     room = Room_Promos(base_url, html)    
     cont = room.soup.find('div', id='main-content')
     for item in cont.find_all(class_='box'):
@@ -630,7 +629,6 @@ def scrape_party_poker(html, rooms, promos_url):
 
 def scrape_natural8(html, rooms, promos_url):
     base_url = promos_url.rsplit('/', 1)[0]
-#    print_exit(base_url)
     room = Room_Promos(base_url, html)    
     cont = room.soup.find('div', class_='rock_margin_30')
     for item in cont.find_all(class_='rock_main_event'):
