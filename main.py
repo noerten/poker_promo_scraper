@@ -214,7 +214,10 @@ def scrape_guts(html, rooms, promos_url):
         br_part = promo.pdesc.br.extract().string
         wo_br = promo.pdesc.string
         if br_part:
-            promo.pdesc = wo_br + "\n" + br_part
+            if wo_br.endswith(('!', '.', '?')):
+                promo.pdesc = wo_br + " " + br_part
+            else:
+                promo.pdesc = wo_br + ". " + br_part
         else:
             promo.pdesc = wo_br
         promo.plink = item.a.get('href')
@@ -288,7 +291,7 @@ def scrape_betfred(html, rooms, promos_url):
         for p in promo_desc_p:
             if p.get_text().lower() != 'terms & conditions':
                 promo_desc.append(p.get_text())
-        promo.pdesc = '\n'.join(promo_desc)
+        promo.pdesc = ' '.join(promo_desc)
         if item.find_all('div', class_='button'):
             for button in item.find_all('div', class_='button'):
                 button_text = button.a.string.lower()
