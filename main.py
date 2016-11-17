@@ -99,6 +99,13 @@ party_poker_promos_urls = ('https://www.partypoker.com/whats-going-on/promotions
 #GGNetwork
 natural8_promos_urls = ('http://www.natural8.com/promotions',)
 
+#GGNetwork
+unibet_promos_urls = ('https://www.unibet.com/promotions',)
+
+#Chiko Network
+tigergaming_promos_urls = ('https://www.tigergaming.com/promotions',)
+betonline_promos_urls = ('https://www.betonline.ag/promotions',)
+
 ###############################################################################
 
 def get_html(url):
@@ -112,6 +119,8 @@ def get_html(url):
     except urllib.error.URLError as err:
         error_desc = 'URL Error: %s at URL %s' % (err.reason, url)
         return('error', error_desc)
+    except ConnectionError as err:
+        error_desc = 'Connection Error: %s at URL %s' % (sys.exc_info(), url)
 
 #must be before classes
 def get_rooms():
@@ -150,8 +159,10 @@ class Promo:
         self.proom = Promo.rooms[room]
         a = ' -\r\n\t\xa0'
         if self.ptitle:
+            self.ptitle = " ".join(self.ptitle.split())
             self.ptitle = self.ptitle.strip(a)
         if self.pdesc:
+            self.pdesc = " ".join(self.pdesc.split())
             self.pdesc = self.pdesc.strip(a)
         if self.plink and not (self.plink.startswith("//") or self.plink.startswith("http")):
             self.plink = base_url+self.plink
@@ -538,23 +549,6 @@ def scrape_32red_poker(html, rooms, promos_url):
         room.add_promo(promo.one_promo)
     return room.room_promos
 
-def scrape_32red_poker(html, rooms, promos_url):
-    base_url = promos_url.rsplit('/', 2)[0]
-    room = Room_Promos(base_url, html)    
-    cont = room.soup.find('div', id='content')
-    for item in cont.find_all('div', class_='promoBox'):
-        promo = Promo()
-        promo.ptitle = item.find('h3').get_text()
-        promo.plink = item.a.get('href')
-        promo.ptype = 'poker'
-        pdesc1 = item.find('h4').get_text()
-        pdesc2 = item.find('p').get_text()
-        promo.pdesc = pdesc1 + '\n' + pdesc2
-        promo.pimage_link = item.img.get('src')
-        promo.clear_promo_data('32red', room.base_url) 
-        room.add_promo(promo.one_promo)
-    return room.room_promos
-
 def scrape_betvictor_poker(html, rooms, promos_url):
     base_url = promos_url.rsplit('/', 4)[0]
     room = Room_Promos(base_url, html)    
@@ -642,7 +636,77 @@ def scrape_natural8(html, rooms, promos_url):
         room.add_promo(promo.one_promo)
     return room.room_promos
 
+def scrape_unibet(html, rooms, promos_url):
+    #no image, coz it src by js
+    base_url = promos_url.rsplit('/', 1)[0]
+    room = Room_Promos(base_url, html, "html5lib")    
+    cont = room.soup.find('div', id='column-primary')
+    for outer_item in cont.find_all('div', recursive=False):
+        for item in outer_item.find_all('article', class_="list-element"):
+            promo = Promo()
+            promo.ptype = outer_item.h3.get_text().lower().split(' ')[0]
+            promo.ptitle = item.find('h4', class_='headline').get_text()
+            promo.plink = item.a.get('href')
+            if promo.plink and not (promo.plink.startswith("//") or promo.plink.startswith("http")):
+                promo.plink = base_url+promo.plink
+            promo_html = get_html(promo.plink)
+            promo_soup = BeautifulSoup(promo_html, "html.parser")
+            promo_cont = promo_soup.find('div', id='column-primary')
+            promo.pdesc = promo_cont.find('p').get_text()
+#            promo.pimage_link = promo_cont.img.get('src')
+            promo.clear_promo_data('unibet', room.base_url) 
+            room.add_promo(promo.one_promo)
+    return room.room_promos
 
+def scrape_tigergaming(html, rooms, promos_url):
+    base_url = promos_url.rsplit('/', 1)[0]
+    room = Room_Promos(base_url, html)    
+    cont = room.soup.find('div', class_='view-content')
+    for item in cont.find_all('div', class_='promo-wrapper'):
+        promo = Promo()
+        promo.ptitle = item.p.span.strong.get_text()
+        promo.plink = item.a.get('href')
+        promo.ptype = 'poker'
+        promo_desc_cont = item.p.span
+        for tag in promo_desc_cont.find_all(True):
+            tag.replaceWith('')
+        promo_desc = promo_desc_cont.get_text()
+        promo.pimage_link = item.img.get('src')
+        for i in 'casino', 'sportsbook', 'racebook':
+            if i in promo.plink:
+                print(1)
+                if i == 'casino':
+                    promo.ptype = 'casino'
+                else:
+                    promo.ptype = 'sports'
+        promo.clear_promo_data('tigergaming', room.base_url) 
+        room.add_promo(promo.one_promo)
+    return room.room_promos
+
+def scrape_betonline(html, rooms, promos_url):
+    base_url = promos_url.rsplit('/', 1)[0]
+    room = Room_Promos(base_url, html)    
+    cont = room.soup
+    for item in cont.find_all('div', class_='promotion_item'):
+        promo = Promo()
+        promo.ptitle = item.h3.get_text()
+        promo.plink = item.a.get('href')
+        p_parent = item.parent.get('id')
+        if p_parent == 'deposit' or p_parent == 'sportsbooksection' or p_parent == 'horses':
+            promo.ptype = 'sports'
+        elif p_parent == 'casino':
+            promo.ptype = 'casino'
+        elif p_parent == 'poker':
+            promo.ptype = 'poker'
+        else:
+            promo.ptype = 'other'
+        for tag in item.p.find_all(True):
+            tag.replaceWith('')
+        promo.pdesc = item.p.get_text()
+        promo.pimage_link = item.img.get('src')
+        promo.clear_promo_data('betonline', room.base_url) 
+        room.add_promo(promo.one_promo)
+    return room.room_promos
 
 #####################################
 def testing():
@@ -677,10 +741,13 @@ if not testing():
                    tonybet_poker_promos_urls: scrape_tonybet_poker,
                    party_poker_promos_urls: scrape_party_poker,
                    natural8_promos_urls: scrape_natural8,
+                   unibet_promos_urls: scrape_unibet,
+                   tigergaming_promos_urls: scrape_tigergaming,
+                   betonline_promos_urls: scrape_betonline,
                    }
 else:
     promos_urls = {
-                   party_poker_promos_urls: scrape_party_poker,
+                   betonline_promos_urls: scrape_betonline,
                    }
 print('testing: '+str(testing()))
 
@@ -709,6 +776,9 @@ def create_tables():
         ("tonybet",),
         ("party",),
         ("natural8",),
+        ("unibet",),
+        ("tigergaming",),
+        ("betonline",),
         )
     conn = sqlite3.connect('pps.sqlite3')
     with conn:
