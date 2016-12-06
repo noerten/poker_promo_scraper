@@ -874,7 +874,6 @@ def main():
     rooms = get_rooms()
     start_time = time.time()
     prev_time = None
-
     for urls in list(promos_urls.keys()):
         for url in urls:
             html = get_html(url)
@@ -916,9 +915,7 @@ def main():
         print(i)
     insert_promos(compared_promos)
     print('end')
-    print("total program took ", time.time() - start_time, " sec to run")
-
-
+    print("total program took", time.time() - start_time, "sec to run")
 
 if __name__ == '__main__':
     main()
