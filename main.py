@@ -3,6 +3,7 @@ import json
 import re
 import sqlite3
 import sys
+import time
 import urllib.request
 
 from bs4 import BeautifulSoup
@@ -871,6 +872,9 @@ def main():
     create_tables()
     print('tables ok')
     rooms = get_rooms()
+    start_time = time.time()
+    prev_time = None
+
     for urls in list(promos_urls.keys()):
         for url in urls:
             html = get_html(url)
@@ -882,6 +886,11 @@ def main():
                 i=promos_urls[urls](html, rooms, url)
                 scraped_promos = scraped_promos+i
                 print(str(len(i))+' promos were scraped from '+url)
+        if not prev_time:
+            prev_time = start_time
+        print("url tuple took", time.time() - prev_time, "sec to run")
+        prev_time = time.time()
+    print("total scraping took", time.time() - start_time, "sec to run")
     #delete dublicates
     scraped_promos = set(scraped_promos)    
     print('in total '+str(len(scraped_promos))+' promos were scraped from '\
@@ -907,6 +916,8 @@ def main():
         print(i)
     insert_promos(compared_promos)
     print('end')
+    print("total program took ", time.time() - start_time, " sec to run")
+
 
 
 if __name__ == '__main__':
