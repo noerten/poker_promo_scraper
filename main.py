@@ -110,7 +110,7 @@ betonline_promos_urls = ('https://www.betonline.ag/promotions',)
 
 def get_html(url):
     try:
-        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+        req = urllib.request.Request(url, headers={'User-Agent': 'Chrome/54.0.2840.99'})
         webpage = urllib.request.urlopen(req).read()
         return webpage
     except urllib.error.HTTPError as err:
@@ -121,6 +121,8 @@ def get_html(url):
         return('error', error_desc)
     except ConnectionError as err:
         error_desc = 'Connection Error: %s at URL %s' % (sys.exc_info(), url)
+        return('error', error_desc)
+
 
 #must be before classes
 def get_rooms():
@@ -655,7 +657,8 @@ def scrape_unibet(html, rooms, promos_url):
             promo_html = get_html(promo.plink)
             promo_soup = BeautifulSoup(promo_html, "html.parser")
             promo_cont = promo_soup.find('div', id='column-primary')
-            promo.pdesc = promo_cont.find('p').get_text()
+            if promo_cont:
+                promo.pdesc = promo_cont.find('p').get_text()
 #            promo.pimage_link = promo_cont.img.get('src')
             promo.clear_promo_data('unibet', room.base_url) 
             room.add_promo(promo.one_promo)
@@ -677,7 +680,6 @@ def scrape_tigergaming(html, rooms, promos_url):
         promo.pimage_link = item.img.get('src')
         for i in 'casino', 'sportsbook', 'racebook':
             if i in promo.plink:
-                print(1)
                 if i == 'casino':
                     promo.ptype = 'casino'
                 else:
@@ -746,11 +748,11 @@ if not testing():
                    natural8_promos_urls: scrape_natural8,
                    unibet_promos_urls: scrape_unibet,
                    tigergaming_promos_urls: scrape_tigergaming,
-                   betonline_promos_urls: scrape_betonline,
+#                   betonline_promos_urls: scrape_betonline,
                    }
 else:
     promos_urls = {
-                   betonline_promos_urls: scrape_betonline,
+                   unibet_promos_urls: scrape_unibet,
                    }
 print('testing: '+str(testing()))
 
