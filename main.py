@@ -874,7 +874,7 @@ def main():
     rooms = get_rooms()
     start_time = time.time()
     prev_time = None
-    for urls in list(promos_urls.keys()):
+    for urls in promos_urls:
         for url in urls:
             html = get_html(url)
             if html[0] == 'error':
