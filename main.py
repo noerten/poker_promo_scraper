@@ -880,7 +880,7 @@ def main():
     for urls in promos_urls:
         for url in urls:
             url_func_dict[url] = promos_urls[urls]
-    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
         # Start the load operations and mark each future with its URL
         future_to_url = {executor.submit(get_html, u): u for u in url_func_dict}
         for future in concurrent.futures.as_completed(future_to_url):
