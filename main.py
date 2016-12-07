@@ -1,3 +1,4 @@
+import concurrent.futures
 import datetime
 import json
 import re
@@ -874,21 +875,29 @@ def main():
     rooms = get_rooms()
     start_time = time.time()
     prev_time = None
+    #dict from promos_promos_urls, where key - one url, value - scrape func
+    url_func_dict = {}
     for urls in promos_urls:
         for url in urls:
-            html = get_html(url)
+            url_func_dict[url] = promos_urls[urls]
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+        # Start the load operations and mark each future with its URL
+        future_to_url = {executor.submit(get_html, u): u for u in url_func_dict}
+        for future in concurrent.futures.as_completed(future_to_url):
+            url = future_to_url[future]
+            html = future.result()
             if html[0] == 'error':
                 error_counter = error_counter + 1
                 print(html[1])
                 continue
             else:       
-                i=promos_urls[urls](html, rooms, url)
+                i=url_func_dict[url](html, rooms, url)
                 scraped_promos = scraped_promos+i
                 print(str(len(i))+' promos were scraped from '+url)
-        if not prev_time:
-            prev_time = start_time
-        print("url tuple took", time.time() - prev_time, "sec to run")
-        prev_time = time.time()
+            if not prev_time:
+                prev_time = start_time
+            print("url took", time.time() - prev_time, "sec to run")
+            prev_time = time.time()
     print("total scraping took", time.time() - start_time, "sec to run")
     #delete dublicates
     scraped_promos = set(scraped_promos)    
