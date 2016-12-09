@@ -12,8 +12,8 @@ import html5lib
 
 #ipoker
 #bet365 only poker
-bet365_poker_promos_urls = ('http://poker.bet365.com/promotions/en',)
-betfair_main_promos_urls = ('https://promos.betfair.com/sport',
+bet365_poker_promo_urls = ('http://poker.bet365.com/promotions/en',)
+betfair_main_promo_urls = ('https://promos.betfair.com/sport',
                             'https://promos.betfair.com/arcade',
                             'https://promos.betfair.com/macau',
 #uncommented coz diff structure and show only first dep bonuses
@@ -21,17 +21,17 @@ betfair_main_promos_urls = ('https://promos.betfair.com/sport',
 #uncommented coz diff structure
 #                           'https://bingo.betfair.com/promotions',
                             )
-betfair_poker_promos_urls = ('https://poker.betfair.com/promotions',)
-betfred_promos_urls = ('http://www.betfred.com/promotions/Sports',
+betfair_poker_promo_urls = ('https://poker.betfair.com/promotions',)
+betfred_promo_urls = ('http://www.betfred.com/promotions/Sports',
                        'http://www.betfred.com/promotions/Casino',
                        'http://www.betfred.com/promotions/Lottery',
                        'http://www.betfred.com/promotions/Poker',
                        'http://www.betfred.com/promotions/Virtual',
                        'http://www.betfred.com/promotions/Bingo',
                        'http://www.betfred.com/games/promotions',)
-boyle_poker_promos_urls = ('http://poker.boylesports.com/promotions',
+boyle_poker_promo_urls = ('http://poker.boylesports.com/promotions',
                            'http://poker.boylesports.com/tournaments',)
-coral_promos_urls = ('http://www.coral.co.uk/lotto/offers/',
+coral_promo_urls = ('http://www.coral.co.uk/lotto/offers/',
                      'http://www.coral.co.uk/poker/offers/',
                      'http://www.coral.co.uk/poker/tournaments/',
                      'http://www.coral.co.uk/gaming/promotions/',
@@ -39,74 +39,74 @@ coral_promos_urls = ('http://www.coral.co.uk/lotto/offers/',
 #uncommented doesnt work coz renders on client? found api, to add                    
 #                     'http://www.coral.co.uk/bingo/promotions/',
                      )
-iron_promos_urls = (
+iron_promo_urls = (
                     'http://www.ironbet.com/promotions',
                     'http://www.ironpoker.com/promotions',
                     )
 #didnt add casino
-mansion_promos_urls = ('http://www.mansionpoker.com/promotions',)
+mansion_promo_urls = ('http://www.mansionpoker.com/promotions',)
 ##didnt added casino coz didnt find api
-netbet_casino_promos_urls = (
+netbet_casino_promo_urls = (
                       'https://casino.netbet.com/eu/promotions-en',
                       'https://vegas.netbet.com/en/promotion',
                       )
-netbet_poker_promos_urls = (
+netbet_poker_promo_urls = (
                       'https://poker.netbet.com/eu/promotions',
                       )
-netbet_sports_promos_urls = (
+netbet_sports_promo_urls = (
                       'https://sportapi-sb.netbet.com/promotions',
                       )
 #didnt add sport and games
-paddypower_casino_promos_urls = (
+paddypower_casino_promo_urls = (
                                  'https://casino.paddypower.com/promotions',
                                  )
-paddypower_poker_promos_urls = (
+paddypower_poker_promo_urls = (
                           'https://api.paddypower.com/promotions/1.0/promotions/?channel=poker&category=324',
 #                         'http://www.paddypower.com/bet/money-back-specials',
                        )
-titan_promos_urls = (
+titan_promo_urls = (
                      #'http://www.titanbet.com/promotions',
                      'http://www.titanpoker.com/promotions',
                      )
-william_hill_poker_promos_urls = (
+william_hill_poker_promo_urls = (
                                   'http://poker.williamhill.com/promotions',
                                   )
-winner_poker_promos_urls = (
+winner_poker_promo_urls = (
                             'http://poker.winner.com/promotions',
                             )
 
 #MPN
-_32red_poker_promos_urls = ('http://32redpoker.com/promotions/all-promotions-at-32red-poker.html',)
-betsafe_promos_urls = ('https://www.betsafe.com/en/specialoffers/',)
-betvictor_poker_promos_urls = ('http://www.betvictor.com/poker/en/content/promotions',)
+_32red_poker_promo_urls = ('http://32redpoker.com/promotions/all-promotions-at-32red-poker.html',)
+betsafe_promo_urls = ('https://www.betsafe.com/en/specialoffers/',)
+betvictor_poker_promo_urls = ('http://www.betvictor.com/poker/en/content/promotions',)
 #despite 'poker' in guts' url, there are all promos
-guts_promos_urls = ('https://www.guts.com/en/poker/promotions/',)
-olybet_promos_urls = ('https://promo.olybet.com/com/sports/promotions/',
+guts_promo_urls = ('https://www.guts.com/en/poker/promotions/',)
+olybet_promo_urls = ('https://promo.olybet.com/com/sports/promotions/',
                       'https://promo.olybet.com/com/casino/promotions/',
                       'https://promo.olybet.com/com/poker/promotions/',)
-triobet_promos_urls = ('https://www.triobet.com/en/promotions/',)
+triobet_promo_urls = ('https://www.triobet.com/en/promotions/',)
 
 #pokerstars
-pokerstars_promos_urls = ('https://www.pokerstars.com/poker/promotions/',)
+pokerstars_promo_urls = ('https://www.pokerstars.com/poker/promotions/',)
 
 #888
-_888_promos_urls = ('https://www.888poker.com/poker-promotions',)
+_888_promo_urls = ('https://www.888poker.com/poker-promotions',)
 
 #tonybet
-tonybet_poker_promos_urls = ('https://tonybetpoker.com/poker_promotions',)
+tonybet_poker_promo_urls = ('https://tonybetpoker.com/poker_promotions',)
 
 #party
-party_poker_promos_urls = ('https://www.partypoker.com/whats-going-on/promotions.html',)
+party_poker_promo_urls = ('https://www.partypoker.com/whats-going-on/promotions.html',)
 
 #GGNetwork
-natural8_promos_urls = ('http://www.natural8.com/promotions',)
+natural8_promo_urls = ('http://www.natural8.com/promotions',)
 
 #GGNetwork
-unibet_promos_urls = ('https://www.unibet.com/promotions',)
+unibet_promo_urls = ('https://www.unibet.com/promotions',)
 
 #Chiko Network
-tigergaming_promos_urls = ('https://www.tigergaming.com/promotions',)
-betonline_promos_urls = ('https://www.betonline.ag/promotions',)
+tigergaming_promo_urls = ('https://www.tigergaming.com/promotions',)
+betonline_promo_urls = ('https://www.betonline.ag/promotions',)
 
 ###############################################################################
 
@@ -722,39 +722,39 @@ def testing():
 #####################################
 if not testing():  
     promos_urls = {
-                   betsafe_promos_urls: scrape_betsafe,
-                   triobet_promos_urls: scrape_triobet,
-                   guts_promos_urls: scrape_guts,
-                   olybet_promos_urls: scrape_olybet,
-                   pokerstars_promos_urls: scrape_pokerstars,
-                   coral_promos_urls: scrape_coral,
-                   betfred_promos_urls: scrape_betfred,
-                   betfair_main_promos_urls: scrape_betfair_main,
-                   betfair_poker_promos_urls: scrape_betfair_poker,
-                   mansion_promos_urls: scrape_mansion,
-                   netbet_sports_promos_urls: scrape_netbet_sports,
-                   netbet_poker_promos_urls: scrape_netbet_poker,
-                   paddypower_poker_promos_urls: scrape_paddypower_poker,
-                   paddypower_casino_promos_urls: scrape_paddypower_casino,
-                   bet365_poker_promos_urls: scrape_bet365_poker,
-                   boyle_poker_promos_urls: scrape_boyle_poker,
-                   iron_promos_urls: scrape_iron,
-                   titan_promos_urls: scrape_titan,
-                   william_hill_poker_promos_urls: scrape_william_hill_poker,
-                   winner_poker_promos_urls: scrape_winner_poker,
-                   _32red_poker_promos_urls: scrape_32red_poker,
-                   betvictor_poker_promos_urls: scrape_betvictor_poker,
-                   _888_promos_urls: scrape_888,
-                   tonybet_poker_promos_urls: scrape_tonybet_poker,
-                   party_poker_promos_urls: scrape_party_poker,
-                   natural8_promos_urls: scrape_natural8,
-                   unibet_promos_urls: scrape_unibet,
-                   tigergaming_promos_urls: scrape_tigergaming,
-#                   betonline_promos_urls: scrape_betonline,
+                   betsafe_promo_urls: scrape_betsafe,
+                   triobet_promo_urls: scrape_triobet,
+                   guts_promo_urls: scrape_guts,
+                   olybet_promo_urls: scrape_olybet,
+                   pokerstars_promo_urls: scrape_pokerstars,
+                   coral_promo_urls: scrape_coral,
+                   betfred_promo_urls: scrape_betfred,
+                   betfair_main_promo_urls: scrape_betfair_main,
+                   betfair_poker_promo_urls: scrape_betfair_poker,
+                   mansion_promo_urls: scrape_mansion,
+                   netbet_sports_promo_urls: scrape_netbet_sports,
+                   netbet_poker_promo_urls: scrape_netbet_poker,
+                   paddypower_poker_promo_urls: scrape_paddypower_poker,
+                   paddypower_casino_promo_urls: scrape_paddypower_casino,
+                   bet365_poker_promo_urls: scrape_bet365_poker,
+                   boyle_poker_promo_urls: scrape_boyle_poker,
+                   iron_promo_urls: scrape_iron,
+                   titan_promo_urls: scrape_titan,
+                   william_hill_poker_promo_urls: scrape_william_hill_poker,
+                   winner_poker_promo_urls: scrape_winner_poker,
+                   _32red_poker_promo_urls: scrape_32red_poker,
+                   betvictor_poker_promo_urls: scrape_betvictor_poker,
+                   _888_promo_urls: scrape_888,
+                   tonybet_poker_promo_urls: scrape_tonybet_poker,
+                   party_poker_promo_urls: scrape_party_poker,
+                   natural8_promo_urls: scrape_natural8,
+                   unibet_promo_urls: scrape_unibet,
+                   tigergaming_promo_urls: scrape_tigergaming,
+#                   betonline_promo_urls: scrape_betonline,
                    }
 else:
     promos_urls = {
-                   unibet_promos_urls: scrape_unibet,
+                   unibet_promo_urls: scrape_unibet,
                    }
 print('testing: '+str(testing()))
 
@@ -875,7 +875,7 @@ def main():
     rooms = get_rooms()
     start_time = time.time()
     prev_time = None
-    #dict from promos_promos_urls, where key - one url, value - scrape func
+    #dict from promos_promo_urls, where key - one url, value - scrape func
     url_func_dict = {}
     for urls in promos_urls:
         for url in urls:
