@@ -1,0 +1,6 @@
+poker/
+
+*.pyc
+
+*.sqlite3
+config.py

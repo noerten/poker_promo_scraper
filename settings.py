@@ -1,6 +1,6 @@
 def testing():
     a = (True, False)
-    return a[1]
+    return a[0]
 #####################################
 
 

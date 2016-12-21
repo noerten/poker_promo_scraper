@@ -2,6 +2,7 @@ import datetime
 import sqlite3
 import sys
 
+#return dict 'name':number
 def get_rooms():
     conn = sqlite3.connect('pps.sqlite3')
     with conn:

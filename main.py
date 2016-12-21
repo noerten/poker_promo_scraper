@@ -45,7 +45,7 @@ if not settings.testing():
                    }
 else:
     promos_urls = {
-                   settings.unibet_promo_urls: scraping.scrape_unibet,
+                   settings.guts_promo_urls: scraping.scrape_guts,
                    }
     promos_urls_w_get = {
                    }
@@ -93,7 +93,6 @@ def main():
     error_counter_w_get, scraped_promos_w_get = scrape_rooms(url_func_w_get_dict, rooms, start_time, error_counter=0)
     error_counter = error_counter + error_counter_w_get
     scraped_promos = scraped_promos + scraped_promos_w_get
-    print(len(scraped_promos))
     print("total scraping took", time.time() - start_time, "sec to run")
     #delete dublicates
     scraped_promos = set(scraped_promos)    
@@ -111,16 +110,19 @@ def main():
     for i in compared_promos[0]:
         print(i)
         print('---')
+
     ##########################
     if settings.testing() == True or error_counter > 0:
+        return compared_promos[0]
         print('exiting and not saving to db coz testing == true or there are url mistakes')
         sys.exit()
-    print('inactive promotions:')
-    for i in compared_promos[1]:
-        print(i)
-    sub_db.insert_promos(compared_promos)
-    print('end')
-    print("total program took", time.time() - start_time, "sec to run")
-
+    else:
+        print('inactive promotions:')
+        for i in compared_promos[1]:
+            print(i)
+        sub_db.insert_promos(compared_promos)
+        print('end')
+        print("total program took", time.time() - start_time, "sec to run")
+        return compared_promos[0]
 if __name__ == '__main__':
     main()
