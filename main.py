@@ -23,12 +23,9 @@ if not settings.testing():
                    settings.netbet_sports_promo_urls: scraping.scrape_netbet_sports,
                    settings.netbet_poker_promo_urls: scraping.scrape_netbet_poker,
                    settings.paddypower_poker_promo_urls: scraping.scrape_paddypower_poker,
-                   settings.paddypower_casino_promo_urls: scraping.scrape_paddypower_casino,
-                   settings.bet365_poker_promo_urls: scraping.scrape_bet365_poker,
                    settings.boyle_poker_promo_urls: scraping.scrape_boyle_poker,
                    settings.iron_promo_urls: scraping.scrape_iron,
                    settings.titan_promo_urls: scraping.scrape_titan,
-                   settings.william_hill_poker_promo_urls: scraping.scrape_william_hill_poker,
                    settings.winner_poker_promo_urls: scraping.scrape_winner_poker,
                    settings._32red_poker_promo_urls: scraping.scrape_32red_poker,
                    settings.betvictor_poker_promo_urls: scraping.scrape_betvictor_poker,
@@ -36,30 +33,35 @@ if not settings.testing():
                    settings.tonybet_poker_promo_urls: scraping.scrape_tonybet_poker,
                    settings.party_poker_promo_urls: scraping.scrape_party_poker,
                    settings.natural8_promo_urls: scraping.scrape_natural8,
-                   settings.unibet_promo_urls: scraping.scrape_unibet,
                    settings.tigergaming_promo_urls: scraping.scrape_tigergaming,
 #                   settings.betonline_promo_urls: scraping.scrape_betonline,
+                   }
+#function with get_html, that break multithreading 
+    promos_urls_w_get = {
+                   settings.paddypower_casino_promo_urls: scraping.scrape_paddypower_casino,
+                   settings.bet365_poker_promo_urls: scraping.scrape_bet365_poker,
+                   settings.william_hill_poker_promo_urls: scraping.scrape_william_hill_poker,
+                   settings.unibet_promo_urls: scraping.scrape_unibet,
                    }
 else:
     promos_urls = {
                    settings.unibet_promo_urls: scraping.scrape_unibet,
                    }
+    promos_urls_w_get = {
+                   }
 print('testing: '+str(settings.testing()))
 
-def main():
-    scraped_promos = []
-    error_counter = 0
-    sub_db.create_tables()
-    print('tables ok')
-    rooms = sub_db.get_rooms()
-    start_time = time.time()
-    prev_time = None
-    #dict from promos_promo_urls, where key - one url, value - scrape func
+def unpack_dict(promos_urls):
     url_func_dict = {}
     for urls in promos_urls:
         for url in urls:
             url_func_dict[url] = promos_urls[urls]
-    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+    return url_func_dict
+
+def scrape_rooms(url_func_dict, rooms, start_time, error_counter=0):
+    scraped_promos = []
+    prev_time = None
+    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
         # Start the load operations and mark each future with its URL
         future_to_url = {executor.submit(scraping.get_html, u): u for u in url_func_dict}
         for future in concurrent.futures.as_completed(future_to_url):
@@ -69,14 +71,29 @@ def main():
                 error_counter = error_counter + 1
                 print(html[1])
                 continue
-            else:       
+            else:
                 i=url_func_dict[url](html, rooms, url)
-                scraped_promos = scraped_promos+i
+                scraped_promos.extend(i)
                 print(str(len(i))+' promos were scraped from '+url)
             if not prev_time:
                 prev_time = start_time
             print("url took", time.time() - prev_time, "sec to run")
             prev_time = time.time()
+    return error_counter, scraped_promos
+
+def main():
+    sub_db.create_tables()
+    print('tables ok')
+    rooms = sub_db.get_rooms()
+    start_time = time.time()
+    #dict from promos_urls, where key - one url, value - scrape func
+    url_func_dict = unpack_dict(promos_urls)
+    error_counter, scraped_promos = scrape_rooms(url_func_dict, rooms, start_time, error_counter=0)
+    url_func_w_get_dict = unpack_dict(promos_urls_w_get)
+    error_counter_w_get, scraped_promos_w_get = scrape_rooms(url_func_w_get_dict, rooms, start_time, error_counter=0)
+    error_counter = error_counter + error_counter_w_get
+    scraped_promos = scraped_promos + scraped_promos_w_get
+    print(len(scraped_promos))
     print("total scraping took", time.time() - start_time, "sec to run")
     #delete dublicates
     scraped_promos = set(scraped_promos)    
