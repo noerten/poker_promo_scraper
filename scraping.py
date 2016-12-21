@@ -48,7 +48,7 @@ class Promo:
         self.pimage_link = None
         self.proom = None
         
-    def clear_promo_data(self, room, base_url):
+    def clear_promo_data(self, room, base_url, promos_url):
         self.proom = Promo.rooms[room]
         a = ' -\r\n\t\xa0'
         if self.ptitle:
@@ -57,7 +57,9 @@ class Promo:
         if self.pdesc:
             self.pdesc = " ".join(self.pdesc.split())
             self.pdesc = self.pdesc.strip(a)
-        if self.plink and not (self.plink.startswith("//") or self.plink.startswith("http")):
+        if not self.plink:
+            self.plink = promos_url
+        elif not (self.plink.startswith("//") or self.plink.startswith("http")):
             self.plink = base_url+self.plink
         if self.pimage_link and not (self.pimage_link.startswith("//") or self.pimage_link.startswith("http")):
             self.pimage_link = base_url+self.pimage_link
@@ -74,7 +76,7 @@ def scrape_betsafe(html, rooms, promos_url):
         promo.pdesc = item.find(id='PromotionDescriptionText').string
         promo.plink = item.a.get('href')
         promo.pimage_link = item.find(id='PromotionImage').get('src')
-        promo.clear_promo_data('betsafe', room.base_url) 
+        promo.clear_promo_data('betsafe', room.base_url, promos_url) 
         room.add_promo(promo.one_promo)
     return room.room_promos
 
@@ -92,7 +94,7 @@ def scrape_triobet(html, rooms, promos_url):
         promo.pdesc = promo.pdesc.get_text()
         promo.plink = item.a.get('href')
         promo.pimage_link = item.img.get('data-src')
-        promo.clear_promo_data('triobet', room.base_url) 
+        promo.clear_promo_data('triobet', room.base_url, promos_url) 
         room.add_promo(promo.one_promo)
     return room.room_promos
 
@@ -115,7 +117,7 @@ def scrape_guts(html, rooms, promos_url):
             promo.pdesc = wo_br
         promo.plink = item.a.get('href')
         promo.pimage_link = item.img.get('src')
-        promo.clear_promo_data('guts', room.base_url) 
+        promo.clear_promo_data('guts', room.base_url, promos_url) 
         room.add_promo(promo.one_promo)
     return room.room_promos
 
@@ -128,7 +130,7 @@ def scrape_olybet(html, rooms, promos_url):
         promo.ptitle = item.find('span').string
         promo.plink = item.a.get('href')
         promo.pimage_link = item.img.get('src')
-        promo.clear_promo_data('olybet', room.base_url) 
+        promo.clear_promo_data('olybet', room.base_url, promos_url) 
         room.add_promo(promo.one_promo)
     return room.room_promos
 
@@ -145,7 +147,7 @@ def scrape_pokerstars(html, rooms, promos_url):
         promo.ptitle = promo.ptitle.get_text()
         promo.plink = item.a.get('href')
         promo.pimage_link = item.img.get('src')
-        promo.clear_promo_data('pokerstars', room.base_url) 
+        promo.clear_promo_data('pokerstars', room.base_url, promos_url) 
         room.add_promo(promo.one_promo)
     return room.room_promos
 
@@ -160,9 +162,9 @@ def scrape_coral(html, rooms, promos_url):
         try:
             promo.pdesc = item.p.string
         except:
-            print(promo.ptitle+' has mistake in description')
+            print('item has mistake in description')
         promo.pimage_link = item.img.get('src').split('?')[0]
-        promo.clear_promo_data('coral', room.base_url) 
+        promo.clear_promo_data('coral', room.base_url, promos_url) 
         room.add_promo(promo.one_promo)
     return room.room_promos
 
@@ -191,7 +193,7 @@ def scrape_betfred(html, rooms, promos_url):
                 if button_text.startswith('more detail'):
                     promo.plink = button.a.get('href')
         promo.pimage_link = item.img.get('src')
-        promo.clear_promo_data('betfred', room.base_url) 
+        promo.clear_promo_data('betfred', room.base_url, promos_url) 
         room.add_promo(promo.one_promo)
     return room.room_promos
 
@@ -217,7 +219,7 @@ def scrape_betfair_main(html, rooms, promos_url):
         promo.plink = item.a.get('href')
         promo_image_cont = item.find('div', class_='banner-image')['style']
         promo.pimage_link = re.findall("\('(.*?)'\)", promo_image_cont)[0]
-        promo.clear_promo_data('betfair', room.base_url) 
+        promo.clear_promo_data('betfair', room.base_url, promos_url) 
         room.add_promo(promo.one_promo)
     return room.room_promos
 
@@ -231,7 +233,7 @@ def scrape_betfair_poker(html, rooms, promos_url):
         promo.pdesc = item.find('span', class_='promotion-title-caption').p.string
         promo.plink = item.a.get('href')
         promo.pimage_link = item.img.get('src')
-        promo.clear_promo_data('betfair', room.base_url) 
+        promo.clear_promo_data('betfair', room.base_url, promos_url) 
         room.add_promo(promo.one_promo)
     return room.room_promos
 
@@ -245,7 +247,7 @@ def scrape_mansion(html, rooms, promos_url):
         promo.pdesc = item.find('p').get_text()
         promo.plink = item.a.get('href')
         promo.pimage_link = item.img.get('src')
-        promo.clear_promo_data('mansion', room.base_url) 
+        promo.clear_promo_data('mansion', room.base_url, promos_url) 
         room.add_promo(promo.one_promo)
     return room.room_promos
 
@@ -259,7 +261,7 @@ def scrape_netbet_sports(html, rooms, promos_url):
         promo.pdesc = item.p.string
         promo.plink = item.a.get('href')
         promo.pimage_link = item.find('div', class_='contentPage').img.get('src')
-        promo.clear_promo_data('netbet', room.base_url) 
+        promo.clear_promo_data('netbet', room.base_url, promos_url) 
         room.add_promo(promo.one_promo)
     return room.room_promos
 
@@ -273,7 +275,7 @@ def scrape_netbet_poker(html, rooms, promos_url):
         promo.pdesc = item.find('div', class_='offer-details').p.string
         promo.plink = item.a.get('href')
         promo.pimage_link = item.img.get('src')
-        promo.clear_promo_data('netbet', room.base_url) 
+        promo.clear_promo_data('netbet', room.base_url, promos_url) 
         room.add_promo(promo.one_promo)
     return room.room_promos
 
@@ -294,7 +296,7 @@ def scrape_paddypower_poker(html, rooms, promos_url):
             promo.plink = 'http://poker.paddypower.com/promotions/#/'+item['alias']
             promo.pimage_link = ('http://i.ppstatic.com/content/poker/'+
                                 item['attributes']['promotion_media']['attribute_value'])
-            promo.clear_promo_data('paddypower', room.base_url) 
+            promo.clear_promo_data('paddypower', room.base_url, promos_url) 
             room.add_promo(promo.one_promo)
     return room.room_promos
 
@@ -320,7 +322,7 @@ def scrape_paddypower_casino(html, rooms, promos_url):
         else:
             promo.pdesc = ptag.string
         promo.pimage_link = item.img.get('src')
-        promo.clear_promo_data('paddypower', room.base_url) 
+        promo.clear_promo_data('paddypower', room.base_url, promos_url) 
         room.add_promo(promo.one_promo)
     return room.room_promos
 
@@ -339,7 +341,7 @@ def scrape_bet365_poker(html, rooms, promos_url):
         promo.pdesc = inner_cont.get_text()
         promo_image_cont = item.find('div', class_='SubNavLinkImage')['style']
         promo.pimage_link = re.findall("\('(.*?)'\)", promo_image_cont)[0]
-        promo.clear_promo_data('bet365', room.base_url) 
+        promo.clear_promo_data('bet365', room.base_url, promos_url) 
         room.add_promo(promo.one_promo)
     return room.room_promos
 
@@ -354,7 +356,7 @@ def scrape_boyle_poker(html, rooms, promos_url):
         promo.plink = item.a.get('href')
         promo.pdesc = item.find('div', class_='promo-box-li-content-txt').get_text()
         promo.pimage_link = item.img.get('src')
-        promo.clear_promo_data('boyle', room.base_url) 
+        promo.clear_promo_data('boyle', room.base_url, promos_url) 
         room.add_promo(promo.one_promo)
     return room.room_promos
 
@@ -375,7 +377,7 @@ def scrape_iron(html, rooms, promos_url):
         promo.ptitle = item.find('a', class_='teaser_title').get_text()
         promo.pdesc = item.find('a', class_='promo_text').get_text()
         promo.pimage_link = item.img.get('src')
-        promo.clear_promo_data('iron', room.base_url) 
+        promo.clear_promo_data('iron', room.base_url, promos_url) 
         room.add_promo(promo.one_promo)
     return room.room_promos
 
@@ -390,7 +392,7 @@ def scrape_titan(html, rooms, promos_url):
         promo.ptitle = item.h3.p.string
         promo.pdesc = item.find('p', recursive=False).get_text()
         promo.pimage_link = item.img.get('src')
-        promo.clear_promo_data('titan', room.base_url) 
+        promo.clear_promo_data('titan', room.base_url, promos_url) 
         room.add_promo(promo.one_promo)
     return room.room_promos
 
@@ -409,7 +411,7 @@ def scrape_william_hill_poker(html, rooms, promos_url):
         promo_html = get_html(promo.plink)
         promo_soup = BeautifulSoup(promo_html, "html.parser")
         promo.ptitle = promo_soup.find(id='pokerTitleUnder').h1.string
-        promo.clear_promo_data('william_hill', room.base_url) 
+        promo.clear_promo_data('william_hill', room.base_url, promos_url) 
         room.add_promo(promo.one_promo)
     return room.room_promos
 
@@ -424,7 +426,7 @@ def scrape_winner_poker(html, rooms, promos_url):
         promo.ptype = 'poker'
         promo.pdesc = item.find('div', class_='txt').p.get_text()
         promo.pimage_link = item.img.get('src')
-        promo.clear_promo_data('winner', room.base_url) 
+        promo.clear_promo_data('winner', room.base_url, promos_url) 
         room.add_promo(promo.one_promo)
     return room.room_promos
 
@@ -441,7 +443,7 @@ def scrape_32red_poker(html, rooms, promos_url):
         pdesc2 = item.find('p').get_text()
         promo.pdesc = pdesc1 + '\n' + pdesc2
         promo.pimage_link = item.img.get('src')
-        promo.clear_promo_data('32red', room.base_url) 
+        promo.clear_promo_data('32red', room.base_url, promos_url) 
         room.add_promo(promo.one_promo)
     return room.room_promos
 
@@ -458,7 +460,7 @@ def scrape_betvictor_poker(html, rooms, promos_url):
         main_td.strong.replaceWith('')
         promo.pdesc = main_td.get_text()
         promo.pimage_link = item.img.get('src')
-        promo.clear_promo_data('betvictor', room.base_url) 
+        promo.clear_promo_data('betvictor', room.base_url, promos_url) 
         room.add_promo(promo.one_promo)
     return room.room_promos
 
@@ -483,7 +485,7 @@ def scrape_888(html, rooms, promos_url):
             promo.plink = item.a.get('href')
             promo.pdesc = item.find('span', class_='item-description').get_text()
             promo.pimage_link = item.img.get('data-original')
-            promo.clear_promo_data('888', room.base_url) 
+            promo.clear_promo_data('888', room.base_url, promos_url) 
             room.add_promo(promo.one_promo)
     return room.room_promos
 
@@ -498,7 +500,7 @@ def scrape_tonybet_poker(html, rooms, promos_url):
         promo.ptype = 'poker'
         promo.pdesc = item.p.get_text()
         promo.pimage_link = item.img.get('src')
-        promo.clear_promo_data('tonybet', room.base_url) 
+        promo.clear_promo_data('tonybet', room.base_url, promos_url) 
         room.add_promo(promo.one_promo)
     return room.room_promos
 
@@ -513,7 +515,7 @@ def scrape_party_poker(html, rooms, promos_url):
         promo.ptype = 'poker'
         promo.pdesc = item.find('div', class_='contentBox').get_text()
         promo.pimage_link = item.img.get('src')
-        promo.clear_promo_data('party', room.base_url) 
+        promo.clear_promo_data('party', room.base_url, promos_url) 
         room.add_promo(promo.one_promo)
     return room.room_promos
 
@@ -528,7 +530,7 @@ def scrape_natural8(html, rooms, promos_url):
         promo.ptype = 'poker'
         promo.pdesc = item.find('div', class_='rock_main_event_detail').find_all('p')[-1].string
         promo.pimage_link = item.img.get('src')
-        promo.clear_promo_data('natural8', room.base_url) 
+        promo.clear_promo_data('natural8', room.base_url, promos_url) 
         room.add_promo(promo.one_promo)
     return room.room_promos
 
@@ -551,7 +553,7 @@ def scrape_unibet(html, rooms, promos_url):
             if promo_cont:
                 promo.pdesc = promo_cont.find('p').get_text()
 #            promo.pimage_link = promo_cont.img.get('src')
-            promo.clear_promo_data('unibet', room.base_url) 
+            promo.clear_promo_data('unibet', room.base_url, promos_url) 
             room.add_promo(promo.one_promo)
     return room.room_promos
 
@@ -575,7 +577,7 @@ def scrape_tigergaming(html, rooms, promos_url):
                     promo.ptype = 'casino'
                 else:
                     promo.ptype = 'sports'
-        promo.clear_promo_data('tigergaming', room.base_url) 
+        promo.clear_promo_data('tigergaming', room.base_url, promos_url) 
         room.add_promo(promo.one_promo)
     return room.room_promos
 
@@ -600,7 +602,7 @@ def scrape_betonline(html, rooms, promos_url):
             tag.replaceWith('')
         promo.pdesc = item.p.get_text()
         promo.pimage_link = item.img.get('src')
-        promo.clear_promo_data('betonline', room.base_url) 
+        promo.clear_promo_data('betonline', room.base_url, promos_url) 
         room.add_promo(promo.one_promo)
     return room.room_promos
 

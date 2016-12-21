@@ -1,9 +1,3 @@
-def testing():
-    a = (True, False)
-    return a[0]
-#####################################
-
-
 #ipoker
 #bet365 only poker
 bet365_poker_promo_urls = ('http://poker.bet365.com/promotions/en',)

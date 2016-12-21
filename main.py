@@ -3,12 +3,13 @@ import datetime
 import sys
 import time
 
+import config
 import scraping
 import settings
 import sub_db
 
 #####################################
-if not settings.testing():  
+if not config.testing():  
     promos_urls = {
                    settings.betsafe_promo_urls: scraping.scrape_betsafe,
                    settings.triobet_promo_urls: scraping.scrape_triobet,
@@ -49,7 +50,7 @@ else:
                    }
     promos_urls_w_get = {
                    }
-print('testing: '+str(settings.testing()))
+print('testing: '+str(config.testing()))
 
 def unpack_dict(promos_urls):
     url_func_dict = {}
@@ -112,7 +113,7 @@ def main():
         print('---')
 
     ##########################
-    if settings.testing() == True or error_counter > 0:
+    if config.testing() == True or error_counter > 0:
         return compared_promos[0]
         print('exiting and not saving to db coz testing == true or there are url mistakes')
         sys.exit()
