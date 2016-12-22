@@ -46,7 +46,7 @@ if not config.testing():
                    }
 else:
     promos_urls = {
-                   settings.guts_promo_urls: scraping.scrape_guts,
+                   settings.unibet_promo_urls: scraping.scrape_unibet,
                    }
     promos_urls_w_get = {
                    }

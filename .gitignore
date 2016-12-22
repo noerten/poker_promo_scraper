@@ -4,3 +4,4 @@ poker/
 
 *.sqlite3
 config.py
+*.log

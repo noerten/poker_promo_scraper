@@ -545,14 +545,11 @@ def scrape_unibet(html, rooms, promos_url):
             promo.ptype = outer_item.h3.get_text().lower().split(' ')[0]
             promo.ptitle = item.find('h4', class_='headline').get_text()
             promo.plink = item.a.get('href')
-            if promo.plink and not (promo.plink.startswith("//") or promo.plink.startswith("http")):
-                promo.plink = base_url+promo.plink
-            promo_html = get_html(promo.plink)
-            promo_soup = BeautifulSoup(promo_html, "html.parser")
-            promo_cont = promo_soup.find('div', id='column-primary')
-            if promo_cont:
-                promo.pdesc = promo_cont.find('p').get_text()
-#            promo.pimage_link = promo_cont.img.get('src')
+            promo.pdesc = item.find('div', class_='teaser-text').get_text()
+            img_id = item.img.get('data-id')
+            promo.pimage_link = 'https://a1s.unicdn.net/polopoly_fs/{}!/image.png?width=150&derivative=box'.format(
+                img_id)
+            print(promo.pimage_link)
             promo.clear_promo_data('unibet', room.base_url, promos_url) 
             room.add_promo(promo.one_promo)
     return room.room_promos
